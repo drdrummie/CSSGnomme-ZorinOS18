@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.cssgnomme" path="/org/gnome/shell/extensions/cssgnomme/">
+
+    <!-- Initialization flag -->
+    <key name="initialized" type="b">
+      <default>false</default>
+      <summary>Extension initialized</summary>
+      <description>Whether the extension has been initialized with default values</description>
+    </key>
+
+    <!-- Basic transparency settings - compatible with Cinnamon -->
+    <key name="panel-opacity" type="d">
+      <default>0.6</default>
+      <summary>Panel Opacity</summary>
+      <description>Adjust the transparency of the main panel (taskbar). Lower values create more glass-like effect.</description>
+    </key>
+
+    <key name="menu-opacity" type="d">
+      <default>0.8</default>
+      <summary>Menu Opacity</summary>
+      <description>Adjust the transparency of popup menus. Creates modern frosted glass appearance when combined with blur effects.</description>
+    </key>
+
+    <!-- Color override settings - compatible with Cinnamon -->
+    <key name="override-panel-color" type="b">
+      <default>false</default>
+      <summary>Override panel color</summary>
+      <description>When enabled, use the selected override color for the panel background. If 'Override popup color' is disabled, this color is also used for popup menus.</description>
+    </key>
+
+    <key name="choose-override-panel-color" type="s">
+      <default>'rgba(46, 52, 64, 0.8)'</default>
+      <summary>Choose override panel color</summary>
+      <description>Select the background color to use for the panel when 'Override panel color' is enabled. Supports transparency (alpha channel).</description>
+    </key>
+
+    <key name="override-popup-color" type="b">
+      <default>false</default>
+      <summary>Override popup color</summary>
+      <description>When enabled, use the selected override color for popup menu backgrounds instead of the panel color. Requires 'Override panel color' to be enabled for full effect.</description>
+    </key>
+
+    <key name="choose-override-popup-color" type="s">
+      <default>'rgba(255, 255, 255, 0.9)'</default>
+      <summary>Choose override popup color</summary>
+      <description>Select the background color to use for popup menus when 'Override popup color' is enabled. Supports transparency (alpha channel).</description>
+    </key>
+
+    <!-- Border radius settings - compatible with Cinnamon -->
+    <key name="border-radius" type="i">
+      <default>12</default>
+      <summary>Border Radius</summary>
+      <description>Rounded corners for panels and menus. Used as fallback when auto-detect fails or finds inconsistent values. Set to 0 for completely flat appearance.</description>
+    </key>
+
+    <key name="apply-panel-radius" type="b">
+      <default>false</default>
+      <summary>Apply border radius to main panel</summary>
+      <description>Enable rounded corners on taskbar for modern appearance. May look odd at screen edges depending on your theme.</description>
+    </key>
+
+    <key name="panel-margin" type="i">
+      <default>0</default>
+      <summary>Panel margin</summary>
+      <description>Horizontal margin for floating panel effect. Set to 0 for pinned (edge-to-edge) mode, or 4-32 for floating panel separated from screen edges. Border radius only applies when margin is greater than 0.</description>
+    </key>
+
+    <key name="auto-detect-radius" type="b">
+      <default>true</default>
+      <summary>Auto-detect theme border radius</summary>
+      <description>Automatically detect and use border-radius from current theme for consistent appearance. When enabled, the extension analyzes your theme to match its design.</description>
+    </key>
+
+    <!-- Color extraction and theme integration -->
+    <key name="auto-color-extraction" type="b">
+      <default>true</default>
+      <summary>Auto-extract colors from wallpaper</summary>
+      <description>Automatically detect and apply colors from your wallpaper when it changes. Extracts dominant colors for panel/popup backgrounds and accent colors for borders.</description>
+    </key>
+
+    <!-- Blur effects settings - compatible with Cinnamon -->
+    <key name="blur-radius" type="i">
+      <default>22</default>
+      <summary>Blur radius</summary>
+      <description>Controls the intensity of the blur effect. Higher values create a stronger, more diffused glass-like appearance (e.g., 30px+ for foggy effect), while lower values (1-10px) produce sharper, more subtle blurring for a cleaner look.</description>
+    </key>
+
+    <key name="blur-saturate" type="d">
+      <default>0.95</default>
+      <summary>Saturation multiplier</summary>
+      <description>Adjusts color vibrancy in the blurred background. Values above 1.0 make colors more vivid and lively (for brighter, more energetic glass effect), while below 1.0 create muted, desaturated tones for a softer, more elegant appearance.</description>
+    </key>
+
+    <key name="blur-contrast" type="d">
+      <default>0.75</default>
+      <summary>Contrast multiplier</summary>
+      <description>Controls the difference between light and dark areas in the blur. Higher values (above 1.0) enhance sharpness and depth for a more defined, modern look, while lower values soften the effect for a smoother, less harsh glass appearance.</description>
+    </key>
+
+    <key name="blur-brightness" type="d">
+      <default>0.65</default>
+      <summary>Brightness multiplier</summary>
+      <description>Modifies the overall lightness of the blurred layer. Increase above 1.0 for a brighter, more illuminated glass effect (ideal for light themes), or decrease below 1.0 for darker, moodier tones that blend better with dark backgrounds.</description>
+    </key>
+
+    <key name="blur-background" type="s">
+      <default>'rgba(0, 0, 0, 0.3)'</default>
+      <summary>Background color/tint</summary>
+      <description>Adds a tint overlay to the blur effect. Use semi-transparent colors (e.g., light blue for cool tones or warm orange for cozy feel) to customize the glass appearance - higher opacity for stronger tint, lower for subtle enhancement.</description>
+    </key>
+
+    <key name="blur-border-color" type="s">
+      <default>'rgba(255, 255, 255, 0.15)'</default>
+      <summary>Border color</summary>
+      <description>Sets the color of the subtle border framing the blurred elements. Choose white/light colors for a clean, modern edge, or darker tones for better contrast - adjust opacity for softer or more defined borders.</description>
+    </key>
+
+    <key name="blur-border-width" type="i">
+      <default>1</default>
+      <summary>Border width</summary>
+      <description>Defines the thickness of the border around blurred elements. Thicker borders (3-5px) create a more prominent frame for emphasis, while thinner (0-1px) or none (0px) give a seamless, integrated glass look.</description>
+    </key>
+
+    <key name="shadow-strength" type="d">
+      <range min="0.0" max="0.8"/>
+      <default>0.3</default>
+      <summary>Shadow spread (outer glow)</summary>
+      <description>Controls the spread radius of box-shadow effects - how wide the outer glow appears around panels and menus. 0.0 = no visible shadow, 0.3 = subtle depth (12px, recommended), 0.5 = medium halo (20px), 0.8 = wide glow (32px). Works independently of shadow color opacity.</description>
+    </key>
+
+    <key name="shadow-color" type="s">
+      <default>'rgba(255, 255, 255, 0.7)'</default>
+      <summary>Shadow color</summary>
+      <description>Sets the base color of shadows, automatically adjusted for light/dark themes. Supports full RGBA color specification for custom shadow colors. Default is white for light themes, black for dark themes.</description>
+    </key>
+
+    <key name="blur-opacity" type="d">
+      <default>0.8</default>
+      <summary>Blur opacity</summary>
+      <description>Controls the transparency of the entire blur layer. Higher values (0.8-1.0) make the glass effect more prominent and solid, while lower values (0.1-0.5) create a lighter, more ethereal appearance that blends seamlessly with the background.</description>
+    </key>
+
+    <!-- Extended UI styling settings - DEPRECATED: All styling now handled via CSS overlay -->
+
+    <key name="enable-alttab-styling" type="b">
+      <default>false</default>
+      <summary>Style Alt-Tab switcher elements</summary>
+      <description>Apply transparency and blur effects to Alt-Tab window switcher. Creates a consistent glass appearance for the application switcher.</description>
+    </key>
+
+    <!-- System tray indicator settings - compatible with Cinnamon -->
+    <key name="hide-tray-icon" type="b">
+      <default>false</default>
+      <summary>Hide system tray indicator</summary>
+      <description>Hide the transparency control icon from the system tray. You can still access settings through GNOME Settings > Extensions.</description>
+    </key>
+
+    <key name="notifications-enabled" type="b">
+      <default>true</default>
+      <summary>Enable notifications</summary>
+      <description>Show desktop notifications for theme changes, color extraction, and other extension events. Disable for silent operation.</description>
+    </key>
+
+    <!-- Legacy compatibility settings for GNOME Shell -->
+    <key name="enable-blur" type="b">
+      <default>false</default>
+      <summary>Enable blur effects</summary>
+      <description>Apply blur effects to transparent elements for a modern glass-like appearance</description>
+    </key>
+
+    <!-- Enhanced Zorin Integration Settings -->
+    <key name="enable-zorin-integration" type="b">
+      <default>true</default>
+      <summary>Enable Zorin OS integration</summary>
+      <description>Automatically detect and enhance Zorin OS shell components with advanced styling</description>
+    </key>
+
+    <!-- Zorin Theme Tint Control -->
+    <key name="zorin-tint-strength" type="i">
+      <range min="0" max="100"/>
+      <default>0</default>
+      <summary>Zorin theme tint strength (%)</summary>
+      <description>Controls the intensity of Zorin theme color tint overlay (0% = completely removed/neutral, 50% = half intensity, 100% = original theme). Only affects Zorin themes (ZorinBlue, ZorinGreen, ZorinRed, etc.). Lower values create more neutral appearance while retaining theme character.</description>
+    </key>
+
+    <!-- Overlay Theme Management Settings -->
+    <key name="enable-overlay-theme" type="b">
+      <default>false</default>
+      <summary>Enable GTK theme overlay</summary>
+      <description>Create and use a custom GTK theme overlay that inherits from your current theme with CSSGnomme modifications</description>
+    </key>
+
+    <key name="overlay-source-theme" type="s">
+      <default>''</default>
+      <summary>Source theme for overlay</summary>
+      <description>Name of the GTK theme to use as base for the overlay theme</description>
+    </key>
+
+    <key name="original-user-theme" type="s">
+      <default>''</default>
+      <summary>Original user theme</summary>
+      <description>Stores the user's original GTK theme name before activating overlay (for restoration)</description>
+    </key>
+
+    <key name="original-shell-theme" type="s">
+      <default>''</default>
+      <summary>Original Shell theme</summary>
+      <description>Stores the user's original GNOME Shell theme name before activating overlay (for restoration)</description>
+    </key>
+
+    <key name="overlay-auto-update" type="b">
+      <default>true</default>
+      <summary>Auto-update overlay theme</summary>
+      <description>Automatically update overlay theme CSS when settings change (2 second debounce)</description>
+    </key>
+
+    <key name="manual-apply-trigger" type="b">
+      <default>false</default>
+      <summary>Manual apply trigger</summary>
+      <description>Internal flag toggled to trigger manual theme apply from prefs UI</description>
+    </key>
+
+    <key name="trigger-color-extraction" type="b">
+      <default>false</default>
+      <summary>Trigger color extraction</summary>
+      <description>Internal flag toggled to trigger manual color extraction from wallpaper</description>
+    </key>
+
+    <key name="trigger-recreate-overlay" type="b">
+      <default>false</default>
+      <summary>Trigger overlay recreation</summary>
+      <description>Internal flag toggled to trigger complete overlay theme recreation</description>
+    </key>
+
+    <!-- Auto color-scheme switching -->
+    <key name="auto-switch-color-scheme" type="b">
+      <default>true</default>
+      <summary>Auto-filter theme list by color-scheme</summary>
+      <description>Automatically filter theme dropdown to show only themes matching current system light/dark mode (prefer-dark → only dark themes, default/light → only light themes). When disabled, all themes are shown regardless of color-scheme.</description>
+    </key>
+
+    <!-- Full Auto Mode - wallpaper extraction controls ALL colors including blur effects -->
+    <key name="full-auto-mode" type="b">
+      <default>false</default>
+      <summary>Full Auto Mode - Wallpaper Controls All Colors</summary>
+      <description>When enabled, wallpaper color extraction controls ALL styling including blur effects (border, background, shadow). Standard mode: theme controls blur effects, wallpaper controls panel/popup. Full Auto: wallpaper controls everything.</description>
+    </key>
+
+    <!-- Debug settings -->
+    <key name="debug-logging" type="b">
+      <default>false</default>
+      <summary>Enable debug logging</summary>
+      <description>Enable detailed logging for troubleshooting extension issues. Check terminal output with 'journalctl -f' for detailed information.</description>
+    </key>
+
+  </schema>
+</schemalist>
