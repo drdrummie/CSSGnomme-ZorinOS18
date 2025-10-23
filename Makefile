@@ -15,6 +15,7 @@ SOURCE_FILES = \
 	themeUtils.js \
 	loggingUtils.js \
 	constants.js \
+	signalHandler.js \
 	metadata.json
 
 SCHEMA_DIR = schemas
