@@ -116,6 +116,7 @@ Then restart GNOME Shell and enable the extension.
 3. **Enable Overlay**: Toggle "Enable Overlay Theme" to activate
 4. **Extract Colors**: Click "Extract Colors from Wallpaper" for automatic theming
 5. **Customize**: Adjust transparency, blur effects, and colors to your liking
+6. **Disable notifications**: If too distracting for your taste
 
 ### Quick Actions (System Tray Menu)
 
