@@ -10,6 +10,7 @@
 CSS Gnomme is a powerful GNOME Shell extension that creates a **dynamic overlay theme** on top of your existing GTK theme. It automatically extracts colors from your wallpaper, applies custom transparency and blur effects, and enhances your desktop appearance—all **completely reversible** without modifying your original themes.
 
 **Key Features:**
+
 - 🎨 **Automatic color extraction** from your wallpaper
 - 🌫️ **Advanced blur effects** for panels and menus
 - 🔄 **Dynamic theme overlay** that adapts to your background
@@ -27,6 +28,7 @@ Access settings by clicking the **CSS Gnomme icon** in your system tray → **Op
 **This is where you enable CSS Gnomme and choose your base theme.**
 
 #### Theme Integration
+
 - **Enable Overlay Theme**: Master switch to activate the entire CSS Gnomme system
   - ✅ ON: CSS Gnomme creates overlay theme and applies your customizations
   - ❌ OFF: System reverts to your original theme (all settings preserved)
@@ -50,6 +52,7 @@ Access settings by clicking the **CSS Gnomme icon** in your system tray → **Op
   - ❌ OFF: Use manual Border Radius slider in Color Settings
 
 #### Automatic Color Extraction
+
 - **Auto-detect colors on wallpaper change**: Automatically extract and apply colors when you change your background
   - **How it works:** Monitors `~/.config/background` for changes
   - Extracts dominant colors using K-means clustering
@@ -60,6 +63,7 @@ Access settings by clicking the **CSS Gnomme icon** in your system tray → **Op
   - Or to force re-extraction if colors don't look right
 
 #### Manual Controls
+
 - **Apply Changes Now**: Force immediate update (bypasses 2-second auto-update delay)
   - Use when adjusting multiple settings and want instant preview
 
@@ -74,6 +78,7 @@ Access settings by clicking the **CSS Gnomme icon** in your system tray → **Op
 **Fine-tune transparency, colors, and panel appearance.**
 
 #### Basic Transparency Controls
+
 - **Panel Opacity** (0.0 - 1.0): Taskbar/panel transparency
   - **0.0**: Fully transparent (invisible panel)
   - **0.5**: Half transparent (balanced)
@@ -85,6 +90,7 @@ Access settings by clicking the **CSS Gnomme icon** in your system tray → **Op
   - **Tip:** Keep this higher than panel (0.85-0.95) for readability
 
 #### Panel Appearance
+
 - **Panel Margin** (0 - 32px): Horizontal spacing from screen edges
   - **0px**: Pinned to edges (traditional panel)
   - **4-16px**: Floating panel with modern appearance (Zorin style)
@@ -154,7 +160,7 @@ Access settings by clicking the **CSS Gnomme icon** in your system tray → **Op
   - Provides definition and polish to blur effect
 
 - **Border width** (0 - 5px): Thickness of border
-  - **0px**: No border (minimalist)
+  - **0px**: No border (strong box shadow also used as "styling mode" switch)
   - **1-2px**: Subtle definition (recommended)
   - **3-5px**: Prominent frame
 
@@ -170,10 +176,10 @@ Access settings by clicking the **CSS Gnomme icon** in your system tray → **Op
 
 #### Shadow Effects
 
-- **Shadow strength** (0.0 - 1.0): Intensity of drop shadow
+- **Shadow strength** (0.0 - 0.8): Intensity of drop shadow
   - **0.0**: No shadow
   - **0.3-0.5**: Subtle depth
-  - **0.8-1.0**: Strong, dramatic shadow
+  - **0.8**: Strong, dramatic shadow
   - Adds depth perception to panels and menus
 
 - **Shadow color**: Color of drop shadow
@@ -187,22 +193,26 @@ Access settings by clicking the **CSS Gnomme icon** in your system tray → **Op
 **Power-user settings and debugging options.**
 
 #### System Tray
+
 - **Hide system tray indicator**: Remove CSS Gnomme icon from top panel
   - Settings still accessible via Extensions app
   - **Use case:** Minimize clutter after setup is complete
 
 #### Theme Filtering
+
 - **Auto-switch color scheme**: Automatically switch between Light/Dark theme variants
   - ✅ ON: Detects system Dark Mode toggle, switches to matching theme variant
   - Example: ZorinPurple-Light ↔ ZorinPurple-Dark
   - **Note:** Dropdown will only show matching variants (Light OR Dark, not both)
 
 #### Full Auto Mode
+
 - **Full Auto Mode**: Enable all automation features at once
   - Activates: Auto color extraction + Auto theme switching
   - **Recommended:** Turn on for "set it and forget it" experience
 
 #### Debugging
+
 - **Enable debug logging**: Detailed console logs for troubleshooting
   - View logs with: `journalctl -f -o cat /usr/bin/gnome-shell | grep CSSGnomme`
   - Or use: `make logs` from extension directory
@@ -223,6 +233,7 @@ Access settings by clicking the **CSS Gnomme icon** in your system tray → **Op
 ## 🎯 Quick Setup Workflow
 
 ### Minimal Setup (5 minutes)
+
 1. **Page 1 (Theme Overlay)**:
    - ✅ Enable **Enable Overlay Theme**
    - ✅ Enable **Enable Zorin OS Integration** (if on Zorin OS)
@@ -237,6 +248,7 @@ Access settings by clicking the **CSS Gnomme icon** in your system tray → **Op
 3. **Done!** Colors will auto-extract from wallpaper.
 
 ### Full Customization (15 minutes)
+
 1. Follow Minimal Setup above
 2. **Page 3 (Blur Effects)**:
    - Set **Blur radius** (try 30px)
@@ -251,7 +263,9 @@ Access settings by clicking the **CSS Gnomme icon** in your system tray → **Op
 ## 💡 Pro Tips
 
 ### Best Blur Settings
+
 For **frosted glass effect** (macOS-style):
+
 - Blur radius: 30-35px
 - Saturation: 1.2-1.3
 - Contrast: 0.9-1.0
@@ -259,6 +273,7 @@ For **frosted glass effect** (macOS-style):
 - Blur opacity: 0.8-0.9
 
 For **subtle transparency** (Windows 11-style):
+
 - Blur radius: 15-20px
 - Saturation: 1.0-1.1
 - Contrast: 1.0
@@ -266,6 +281,7 @@ For **subtle transparency** (Windows 11-style):
 - Blur opacity: 0.6-0.7
 
 ### Floating Panel Tips
+
 - Set **Panel Margin** to 8-12px
 - Enable **Apply border radius to main panel**
 - Set **Border Radius** to 12-15px
@@ -273,12 +289,14 @@ For **subtle transparency** (Windows 11-style):
 - Result: Modern floating taskbar (Zorin/macOS style)
 
 ### Color Extraction Tips
+
 - **Too dark?** Increase **Brightness multiplier** (Blur Effects page)
 - **Too colorful?** Lower **Saturation multiplier**
 - **Wrong colors?** Click **Extract Colors Now** to re-analyze wallpaper
 - **Manual override?** Disable auto-extraction, use **Override panel color**
 
 ### Performance Tips
+
 - Lower **Blur radius** (< 25px) for better performance on older hardware
 - Disable **Enable debug logging** after setup (reduces CPU usage)
 - Use **Apply Changes Now** sparingly (auto-update is more efficient)
@@ -288,33 +306,41 @@ For **subtle transparency** (Windows 11-style):
 ## 🐛 Troubleshooting
 
 ### Colors not extracting
+
 **Symptom:** "No background image found" notification
 
 **Solution:**
+
 1. Verify wallpaper is set in **Settings → Background**
 2. Click **Extract Colors Now** (Page 1)
 3. Enable **Auto-detect colors on wallpaper change**
 
 ### Blur not visible
+
 **Symptom:** Transparency works but no blur effect
 
 **Solution:**
+
 1. Increase **Blur radius** to 30-40px (Page 3)
 2. Lower **Menu Opacity** to 0.7-0.8 (Page 2)
 3. Check **Blur opacity** is not 0.0 (Page 3)
 
 ### Theme reverts after reboot
+
 **Symptom:** CSS Gnomme overlay resets to original theme
 
 **Solution:**
+
 1. Check **Enable Overlay Theme** is ON (Page 1)
 2. Verify `~/.themes/CSSGnomme/` directory exists
 3. Click **Recreate Overlay Theme** (Page 1)
 
 ### Settings not applying
+
 **Symptom:** Changes made but no visual update
 
 **Solution:**
+
 1. Click **Apply Changes Now** (Page 1)
 2. Restart GNOME Shell: `Alt+F2` → type `r` → Enter (X11 only)
 3. On Wayland: Log out and log back in
