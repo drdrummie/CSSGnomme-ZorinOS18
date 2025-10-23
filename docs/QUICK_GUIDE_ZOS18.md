@@ -349,7 +349,7 @@ For **subtle transparency** (Windows 11-style):
 
 ## 📚 Additional Resources
 
-- **GitHub Repository**: [github.com/drdrummie/CSSGnomme](https://github.com/drdrummie/CSSGnomme-ZorinOS18)
+- **GitHub Repository**: [github.com/drdrummie/CSSGnomme-ZorinOS18](https://github.com/drdrummie/CSSGnomme-ZorinOS18)
 - **Issue Tracker**: Report bugs or request features
 - **Full Documentation**: See `README.md` for technical details
 
