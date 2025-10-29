@@ -489,6 +489,18 @@ export default class CSSGnommeExtension extends Extension {
             ],
             [
                 this._settings,
+                "changed::zorin-tint-strength",
+                () => {
+                    const strength = this._settings.get_int("zorin-tint-strength");
+                    this._logger.info(`Zorin tint strength changed to: ${strength}%`);
+                    // Recreate overlay to apply new tint strength (affects base-theme.css generation)
+                    if (this._settings.get_boolean("enable-overlay-theme")) {
+                        this._recreateOverlayTheme();
+                    }
+                }
+            ],
+            [
+                this._settings,
                 "changed::enable-overlay-theme",
                 () => {
                     const enabled = this._settings.get_boolean("enable-overlay-theme");
@@ -1210,7 +1222,7 @@ export default class CSSGnommeExtension extends Extension {
         } catch (e) {
             this._logger.error(`Error auto-setting shadow color: ${e.message}`);
             // Fallback to white shadow
-            this._settings.set_string("shadow-color", "rgba(255, 255, 255, 0.7)");
+            this._settings.set_string("shadow-color", Constants.DEFAULT_SHADOW_COLORS.light);
         }
     }
 

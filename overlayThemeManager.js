@@ -69,6 +69,14 @@ export class OverlayThemeManager {
         this._componentCacheStats = { hits: 0, misses: 0 };
         this._componentCacheMaxSize = Constants.CACHE_LIMITS.componentCss;
 
+        // Accent color cache (TIER 3 optimization - theme accent color parsing)
+        // Cache key format: "themePath:colorScheme"
+        // Example: "/usr/share/themes/ZorinBlue-Dark:prefer-dark"
+        // Invalidated on source theme change or extension disable
+        // Benefit: 6x speedup (6ms → 1ms per CSS update with 6 accent detection calls)
+        this._accentColorCache = new Map();
+        this._accentCacheStats = { hits: 0, misses: 0 };
+
         this._logger.info("OverlayThemeManager initialized (sync mode)");
     }
 
@@ -351,6 +359,9 @@ export class OverlayThemeManager {
                 );
                 this._baseThemeCache.clear();
                 this._baseThemeCacheStats = { hits: 0, misses: 0 };
+
+                // Clear accent color cache on source theme change
+                this._clearAccentColorCache();
             }
         }
 
@@ -472,15 +483,33 @@ export class OverlayThemeManager {
             // Generate GTK CSS (sync - template generation)
             for (const version of Object.keys(gtkVersions)) {
                 if (gtkVersions[version].exists) {
-                    const isDark = gtkVersions[version].isDark;
+                    // Generate base-theme.css files (neutralized, tint removed)
+                    // IMPORTANT: Generate separate light/dark base themes for future-proofing
+                    // (some themes may have different tint colors in gtk.css vs gtk-dark.css)
 
-                    // Generate base-theme.css (processed source CSS)
-                    const baseCss = this._generateGtkBaseCss(version, sourcePath, isDark, settings);
-                    cssFiles[`${this.overlayPath}/${version}/base-theme.css`] = baseCss;
+                    // Light variant base theme (if gtk.css exists)
+                    if (gtkVersions[version].hasGtkCss) {
+                        const baseCss = this._generateGtkBaseCss(version, sourcePath, false, settings);
+                        cssFiles[`${this.overlayPath}/${version}/base-theme.css`] = baseCss;
+                    }
 
-                    // Generate gtk.css (import + overrides)
-                    const gtkCss = this._generateGtkCss(version, sourcePath, isDark, settings);
-                    cssFiles[`${this.overlayPath}/${version}/gtk.css`] = gtkCss;
+                    // Dark variant base theme (if gtk-dark.css exists)
+                    if (gtkVersions[version].hasDarkCss) {
+                        const baseDarkCss = this._generateGtkBaseCss(version, sourcePath, true, settings);
+                        cssFiles[`${this.overlayPath}/${version}/base-theme-dark.css`] = baseDarkCss;
+                    }
+
+                    // Generate gtk.css (import base-theme.css + overrides)
+                    if (gtkVersions[version].hasGtkCss) {
+                        const gtkCss = this._generateGtkCss(version, sourcePath, false, settings);
+                        cssFiles[`${this.overlayPath}/${version}/gtk.css`] = gtkCss;
+                    }
+
+                    // Generate gtk-dark.css (import base-theme-dark.css + overrides)
+                    if (gtkVersions[version].hasDarkCss) {
+                        const darkCss = this._generateGtkCss(version, sourcePath, true, settings);
+                        cssFiles[`${this.overlayPath}/${version}/gtk-dark.css`] = darkCss;
+                    }
 
                     // Create version directory
                     this._createDirectory(`${this.overlayPath}/${version}`);
@@ -564,6 +593,23 @@ export class OverlayThemeManager {
                 this._logger.error(` ⚠️  GC ERROR after CSS cleanup: ${e.message}`);
             }
 
+            // Symlink GTK version assets (Sprint 5 fix - Fluent theme support)
+            for (const version of Object.keys(gtkVersions)) {
+                if (
+                    gtkVersions[version].exists &&
+                    gtkVersions[version].assets &&
+                    gtkVersions[version].assets.length > 0
+                ) {
+                    gtkVersions[version].assets.forEach(asset => {
+                        this._createSymlink(
+                            `${sourcePath}/${version}/${asset}`,
+                            `${this.overlayPath}/${version}/${asset}`
+                        );
+                    });
+                    this._logger.info(` Symlinked ${gtkVersions[version].assets.length} ${version} assets`);
+                }
+            }
+
             // Symlink ALL other directories (sync - fast symlink operations)
             otherDirs.forEach(dir => {
                 this._createSymlink(`${sourcePath}/${dir}`, `${this.overlayPath}/${dir}`);
@@ -603,51 +649,6 @@ export class OverlayThemeManager {
             this._logger.error(` Stack: ${e.stack}`);
             return false;
         }
-    }
-
-    /**
-     * Create GTK version overlay (gtk-3.0 or gtk-4.0)
-     * @param {string} version - GTK version (gtk-3.0 or gtk-4.0)
-     * @param {string} sourcePath - Path to source theme
-     * @param {Object} versionInfo - Info about this GTK version
-     * @param {Object} settings - Extension settings
-     */
-    _createGtkOverlay(version, sourcePath, versionInfo, settings) {
-        const overlayGtkDir = `${this.overlayPath}/${version}`;
-        this._createDirectory(overlayGtkDir);
-
-        this._logger.info(` Creating ${version} overlay with ${versionInfo.assets.length} assets`);
-
-        // Generate base-theme.css files FIRST (static, with tint removed)
-        if (versionInfo.hasGtkCss) {
-            const baseCss = this._generateGtkBaseCss(version, sourcePath, false, settings);
-            if (baseCss) {
-                this._writeFile(`${overlayGtkDir}/base-theme.css`, baseCss);
-            }
-        }
-
-        if (versionInfo.hasDarkCss) {
-            const baseDarkCss = this._generateGtkBaseCss(version, sourcePath, true, settings);
-            if (baseDarkCss) {
-                this._writeFile(`${overlayGtkDir}/base-theme-dark.css`, baseDarkCss);
-            }
-        }
-
-        // Generate main CSS files (imports base-theme.css + dynamic overrides)
-        if (versionInfo.hasGtkCss) {
-            const gtkCss = this._generateGtkCss(version, sourcePath, false, settings);
-            this._writeFile(`${overlayGtkDir}/gtk.css`, gtkCss);
-        }
-
-        if (versionInfo.hasDarkCss) {
-            const darkCss = this._generateGtkCss(version, sourcePath, true, settings);
-            this._writeFile(`${overlayGtkDir}/gtk-dark.css`, darkCss);
-        }
-
-        // Symlink all assets
-        versionInfo.assets.forEach(asset => {
-            this._createSymlink(`${sourcePath}/${version}/${asset}`, `${overlayGtkDir}/${asset}`);
-        });
     }
 
     /**
@@ -749,67 +750,166 @@ export class OverlayThemeManager {
                 return css;
             }
 
-            // === ZORIN THEME: Detect and process tint color ===
-            // Extract tint color from .background definition (GTK uses this instead of stage)
-            // Match specifically ".background { color:" (NOT "background-color:")
-            let tintHex = null;
-            let tintRgb = null;
-            const backgroundColorMatch = css.match(/\.background\s*\{\s*color:\s*(#[0-9a-fA-F]{6})/);
+            // === ZORIN THEME: Detect and process tint colors (foreground + background) ===
+            // Delegate tint detection to ThemeUtils
+            const tintColors = ThemeUtils.detectGtkTintColors(css, isZorinTheme);
+            const { fgHex: tintFgHex, fgRgb: tintFgRgb, bgHex: tintBgHex, bgRgb: tintBgRgb } = tintColors;
 
-            if (backgroundColorMatch) {
-                tintHex = backgroundColorMatch[1].toLowerCase();
-                // Parse RGB from hex
-                const r = parseInt(tintHex.slice(1, 3), 16);
-                const g = parseInt(tintHex.slice(3, 5), 16);
-                const b = parseInt(tintHex.slice(5, 7), 16);
-                tintRgb = [r, g, b];
+            if (tintFgHex && tintFgRgb) {
+                this._logger.info(
+                    ` GTK Base: Detected Zorin FOREGROUND tint: ${tintFgHex} (rgb ${tintFgRgb[0]}, ${tintFgRgb[1]}, ${tintFgRgb[2]})`
+                );
+            }
 
-                this._logger.info(` GTK Base: Detected Zorin tint color: ${tintHex} (rgb ${r}, ${g}, ${b})`);
-            } else {
-                this._logger.info(` GTK Base: No .background color detected (not a Zorin theme or missing definition)`);
+            if (tintBgHex && tintBgRgb) {
+                this._logger.info(
+                    ` GTK Base: Detected Zorin BACKGROUND tint: ${tintBgHex} (rgb ${tintBgRgb[0]}, ${tintBgRgb[1]}, ${tintBgRgb[2]})`
+                );
+            }
+
+            // If no tints detected, return original CSS
+            if (!tintFgHex && !tintBgHex) {
+                this._logger.info(` GTK Base: No .background colors or @define-color detected (not a Zorin theme)`);
                 return css; // No tint to process
             }
 
-            // Determine neutral color based on theme variant
+            // === DETERMINE DOMINANT TINT CHANNEL (for algorithmic neutralization) ===
+            // Use foreground tint as reference (if available), else background tint
+            const referenceTintRgb = tintFgRgb || tintBgRgb;
+
+            // Calculate adaptive threshold using ThemeUtils
+            const tintThreshold = ThemeUtils.calculateAdaptiveThreshold(referenceTintRgb);
+
+            // Determine dominant channel using ThemeUtils
+            const dominantChannel = ThemeUtils.determineDominantChannel(referenceTintRgb, tintThreshold);
+
+            const [refR, refG, refB] = referenceTintRgb;
+            const maxChannel = Math.max(refR, refG, refB);
+            const minChannel = Math.min(refR, refG, refB);
+            const tintStrengthInRef = maxChannel - minChannel;
+
+            this._logger.info(
+                ` GTK Base: Dominant tint channel: ${
+                    dominantChannel ? dominantChannel.toUpperCase() : "NONE"
+                } (ref: rgb(${refR}, ${refG}, ${refB}), adaptive threshold: ${tintThreshold}, ref tint: ${tintStrengthInRef})`
+            );
+
+            // Determine neutral colors based on theme variant
             const isLightTheme =
                 sourceThemeName.includes("Light") ||
                 sourceThemeName.includes("light") ||
                 (!sourceThemeName.includes("Dark") && !sourceThemeName.includes("dark"));
-            const neutralRgb = isLightTheme ? [50, 50, 50] : [200, 200, 200];
+            const neutralFgRgb = isLightTheme ? [50, 50, 50] : [200, 200, 200];
+            // TRUE NEUTRAL gray - all channels equal (no blue/red/green tint!)
+            const neutralBgRgb = isLightTheme ? [250, 250, 250] : [50, 50, 50]; // Pure neutral gray
 
             // Get tint strength setting (0-100%)
             const tintStrength = settings.get_int("zorin-tint-strength") || 0;
             this._logger.info(` GTK Base: Zorin tint strength: ${tintStrength}%`);
 
-            // Calculate target color based on tint strength
-            const targetRgb = this._blendTintColor(tintRgb, neutralRgb, tintStrength);
-            const targetRgbString = `${targetRgb[0]}, ${targetRgb[1]}, ${targetRgb[2]}`;
-            const targetHex = "#" + targetRgb.map(c => c.toString(16).padStart(2, "0")).join("");
+            // Track replacement counts
+            let totalDefineColorMatches = 0;
+            let totalRgbaMatches = 0;
+            let totalHexMatches = 0;
+
+            // === PROCESS FOREGROUND TINT (if detected) ===
+            if (tintFgHex && tintFgRgb) {
+                const targetFgRgb = this._blendTintColor(tintFgRgb, neutralFgRgb, tintStrength);
+                const targetFgRgbString = `${targetFgRgb[0]}, ${targetFgRgb[1]}, ${targetFgRgb[2]}`;
+                const targetFgHex = "#" + targetFgRgb.map(c => c.toString(16).padStart(2, "0")).join("");
+
+                this._logger.info(
+                    ` GTK Base: Target FOREGROUND (${tintStrength}% blend): ${targetFgHex} (rgb ${targetFgRgbString})`
+                );
+
+                // STEP 1: Replace @define-color directives
+                const fgDefineColorRegex = new RegExp(
+                    `(@define-color\\s+[\\w_-]+\\s+)${tintFgHex.replace("#", "#")}(\\s*;)`,
+                    "gi"
+                );
+                const fgDefineColorMatches = css.match(fgDefineColorRegex);
+                css = css.replace(fgDefineColorRegex, `$1${targetFgHex}$2`);
+                totalDefineColorMatches += fgDefineColorMatches ? fgDefineColorMatches.length : 0;
+
+                // STEP 2: Replace inline rgba(tintR, tintG, tintB, alpha) patterns
+                const tintFgRgbString = `${tintFgRgb[0]}, ${tintFgRgb[1]}, ${tintFgRgb[2]}`;
+                const fgRgbaRegex = new RegExp(
+                    `rgba?\\(\\s*${tintFgRgbString.replace(/,/g, "\\s*,\\s*")}\\s*,\\s*([\\d.]+)\\s*\\)`,
+                    "gi"
+                );
+                const fgRgbaMatches = css.match(fgRgbaRegex);
+                css = css.replace(fgRgbaRegex, `rgba(${targetFgRgbString}, $1)`);
+                totalRgbaMatches += fgRgbaMatches ? fgRgbaMatches.length : 0;
+
+                // STEP 3: Replace inline #tintHex color codes
+                const fgHexRegex = new RegExp(tintFgHex.replace("#", "#"), "gi");
+                const fgHexMatches = css.match(fgHexRegex);
+                css = css.replace(fgHexRegex, targetFgHex);
+                totalHexMatches += fgHexMatches ? fgHexMatches.length : 0;
+            }
+
+            // === PROCESS BACKGROUND TINT (if detected) ===
+            if (tintBgHex && tintBgRgb) {
+                const targetBgRgb = this._blendTintColor(tintBgRgb, neutralBgRgb, tintStrength);
+                const targetBgRgbString = `${targetBgRgb[0]}, ${targetBgRgb[1]}, ${targetBgRgb[2]}`;
+                const targetBgHex = "#" + targetBgRgb.map(c => c.toString(16).padStart(2, "0")).join("");
+
+                this._logger.info(
+                    ` GTK Base: Target BACKGROUND (${tintStrength}% blend): ${targetBgHex} (rgb ${targetBgRgbString})`
+                );
+
+                // STEP 1: Replace @define-color directives
+                const bgDefineColorRegex = new RegExp(
+                    `(@define-color\\s+[\\w_-]+\\s+)${tintBgHex.replace("#", "#")}(\\s*;)`,
+                    "gi"
+                );
+                const bgDefineColorMatches = css.match(bgDefineColorRegex);
+                css = css.replace(bgDefineColorRegex, `$1${targetBgHex}$2`);
+                totalDefineColorMatches += bgDefineColorMatches ? bgDefineColorMatches.length : 0;
+
+                // STEP 2: Replace inline rgba(tintR, tintG, tintB, alpha) patterns
+                const tintBgRgbString = `${tintBgRgb[0]}, ${tintBgRgb[1]}, ${tintBgRgb[2]}`;
+                const bgRgbaRegex = new RegExp(
+                    `rgba?\\(\\s*${tintBgRgbString.replace(/,/g, "\\s*,\\s*")}\\s*,\\s*([\\d.]+)\\s*\\)`,
+                    "gi"
+                );
+                const bgRgbaMatches = css.match(bgRgbaRegex);
+                css = css.replace(bgRgbaRegex, `rgba(${targetBgRgbString}, $1)`);
+                totalRgbaMatches += bgRgbaMatches ? bgRgbaMatches.length : 0;
+
+                // STEP 3: Replace inline #tintHex color codes
+                const bgHexRegex = new RegExp(tintBgHex.replace("#", "#"), "gi");
+                const bgHexMatches = css.match(bgHexRegex);
+                css = css.replace(bgHexRegex, targetBgHex);
+                totalHexMatches += bgHexMatches ? bgHexMatches.length : 0;
+            }
 
             this._logger.info(
-                ` GTK Base: Target color (${tintStrength}% blend): ${targetHex} (rgb ${targetRgbString})`
+                ` GTK Base: Replaced ${totalDefineColorMatches} @define-color + ${totalRgbaMatches} rgba() + ${totalHexMatches} hex tint colors (FG+BG combined)`
             );
 
-            // Replace all rgba(tintR, tintG, tintB, alpha) patterns
-            // Capture group for alpha value to preserve opacity
-            const tintRgbString = `${tintRgb[0]}, ${tintRgb[1]}, ${tintRgb[2]}`;
-            const rgbaRegex = new RegExp(
-                `rgba?\\(\\s*${tintRgbString.replace(/,/g, "\\s*,\\s*")}\\s*,\\s*([\\d.]+)\\s*\\)`,
-                "gi"
-            );
-            const rgbaMatches = css.match(rgbaRegex);
-            css = css.replace(rgbaRegex, `rgba(${targetRgbString}, $1)`);
+            // === STEP 4: ALGORITHMIC NEUTRALIZATION of tinted BACKGROUND colors ===
+            // Find and neutralize ONLY background-related colors with dominant channel tint
+            // Preserves foreground colors (text, borders, accents) to maintain theme identity
+            if (dominantChannel) {
+                this._logger.info(
+                    ` GTK Base: Starting algorithmic neutralization for ${dominantChannel.toUpperCase()}-tinted BACKGROUND colors...`
+                );
 
-            // Replace all #tintHex color codes (case-insensitive)
-            const hexRegex = new RegExp(tintHex.replace("#", "#"), "gi");
-            const hexMatches = css.match(hexRegex);
-            css = css.replace(hexRegex, targetHex);
+                // Delegate to ThemeUtils for context-aware neutralization
+                const neutralizationResult = ThemeUtils.neutralizeTintedCss(css, {
+                    dominantChannel,
+                    threshold: tintThreshold,
+                    tintStrength,
+                    blendFunction: this._blendTintColor.bind(this)
+                });
 
-            this._logger.info(
-                ` GTK Base: Replaced ${rgbaMatches ? rgbaMatches.length : 0} rgba() + ${
-                    hexMatches ? hexMatches.length : 0
-                } hex tint colors with ${targetHex}`
-            );
+                css = neutralizationResult.css;
+
+                this._logger.info(
+                    ` GTK Base: Algorithmic neutralization replaced ${neutralizationResult.replacementCount} tinted colors (backgrounds + @define-color, ${neutralizationResult.whitelistedBlocks} blocks preserved)`
+                );
+            }
 
             // Add header comment
             const timestamp = new Date().toISOString().slice(0, 19).replace("T", " ");
@@ -864,6 +964,10 @@ export class OverlayThemeManager {
         // Get settings values (allow 0 for flat appearance)
         const borderRadius = settings.get_int("border-radius");
 
+        // Detect theme accent color for switch/checkbox styling (cached for performance)
+        const accentColor = this._getCachedAccentColor(sourcePath);
+        const themeIsLight = isLightTheme !== null ? isLightTheme : this._isLightTheme(sourcePath);
+
         // === EXTRACT UNIFIED COLOR SETTINGS ===
         const colorSettings = this._extractColorSettings(sourcePath, settings);
 
@@ -872,197 +976,30 @@ export class OverlayThemeManager {
         this._logger.info(` GTK Popup: ${colorSettings.popup.source}`);
 
         const timestamp = new Date().toISOString().slice(0, 19).replace("T", " ");
+        // Fix v2.4.2: Use separate base themes for light/dark variants (future-proof)
+        // This allows different tint processing if themes have different colors in gtk.css vs gtk-dark.css
         const baseThemeFile = isDark ? "base-theme-dark.css" : "base-theme.css";
-        const importPath = `${sourcePath}/${version}/${cssFile}`;
 
-        // Check if base-theme exists, fallback to original if not
-        // This handles auto-update scenarios where base-theme isn't regenerated
-        const overlayGtkDir = `${this.overlayPath}/${version}`;
-        const baseThemePath = `${overlayGtkDir}/${baseThemeFile}`;
-        const baseThemeExists = GLib.file_test(baseThemePath, GLib.FileTest.EXISTS);
+        // ALWAYS use base-theme-*.css - we just generated it in memory (line 490-503)
+        // During overlay creation, base-theme always exists (generated in same batch)
+        const baseThemeExists = true;
+        const importSource = baseThemeFile;
 
-        const importSource = baseThemeExists ? baseThemeFile : importPath;
-        const importNote = baseThemeExists
-            ? "Modified base theme (tint removed)"
-            : "Original theme (base-theme not found, using fallback)";
-
-        return `/*
- * ${this.extensionName} Overlay Theme - ${isDark ? "Dark" : "Light"} Variant
- * Generated: ${timestamp}
- * Source: ${importNote}
- * GTK Version: ${version}
- */
-
-/* Import ${baseThemeExists ? "modified base theme (tint removed)" : "original theme (fallback)"} */
-@import url("${importSource}");
-
-/*** ${this.extensionName} CSS Variables ***/
-
-@define-color cssgnomme_panel_bg ${colorSettings.panel.color};
-@define-color cssgnomme_panel_fg ${ThemeUtils.rgbaToCss(...colorSettings.panel.fg, 1.0)};
-@define-color cssgnomme_panel_hover ${ThemeUtils.rgbaToCss(
-            ...colorSettings.panel.hover,
-            colorSettings.panel.rgba[3] || 1.0
-        )};
-@define-color cssgnomme_panel_solid_bg ${ThemeUtils.rgbaToCss(
-            colorSettings.panel.rgba[0],
-            colorSettings.panel.rgba[1],
-            colorSettings.panel.rgba[2],
-            1.0
-        )};
-
-@define-color cssgnomme_popup_bg ${colorSettings.popup.color};
-@define-color cssgnomme_popup_fg ${ThemeUtils.rgbaToCss(...colorSettings.popup.fg, 1.0)};
-@define-color cssgnomme_popup_hover ${ThemeUtils.rgbaToCss(
-            ...colorSettings.popup.hover,
-            colorSettings.popup.rgba[3] || 1.0
-        )};
-
-/*** ${this.extensionName} Overrides ***/
-
-/* HeaderBar Styling - only top corners rounded (window continues below) */
-headerbar {
-    background: @cssgnomme_panel_solid_bg;
-    color: @cssgnomme_panel_fg;
-    border-radius: ${borderRadius}px ${borderRadius}px 0 0;
-}
-
-headerbar button {
-    border-radius: calc(${borderRadius}px * ${Constants.BORDER_RADIUS_SCALING.panelButton});
-}
-
-headerbar button:hover {
-    background: @cssgnomme_panel_hover;
-}
-
-/* Window Styling - Client-Side Decorations */
-window.csd,
-window.csd decoration,
-window.solid-csd decoration {
-    border-radius: ${borderRadius}px;
-}
-
-/* Window background */
-window.background {
-    border-radius: ${borderRadius}px;
-}
-
-/* Dialogs and floating windows */
-dialog.background,
-.dialog-vbox {
-    border-radius: ${borderRadius}px;
-}
-
-/* Popover/Menu Styling */
-popover.background,
-.popup-menu {
-    background: @cssgnomme_popup_bg;
-    color: @cssgnomme_popup_fg;
-    border-radius: ${borderRadius}px;
-}
-
-popover.background > contents {
-    background: transparent;
-}
-
-/* Tooltip Styling */
-tooltip.background {
-    background: @cssgnomme_popup_bg;
-    color: @cssgnomme_popup_fg;
-    border-radius: calc(${borderRadius}px * 0.5);
-}
-
-${version === "gtk-4.0" ? this._getGtk4Overrides(borderRadius) : ""}
-
-${
-    !isZorinTheme && enableZorinIntegration
-        ? `
-/* Fluent Theme: Window titlebar styling to match Zorin behavior when integration enabled */
-/* IMPORTANT: This must be at the end to override Fluent's own headerbar rules */
-
-/* Main titlebar/headerbar selectors - cover all window types */
-.titlebar:not(headerbar),
-headerbar,
-window.csd > .titlebar:not(headerbar),
-window.csd > headerbar,
-window.solid-csd > .titlebar,
-.solid-csd headerbar,
-.default-decoration.titlebar:not(headerbar),
-headerbar.default-decoration {
-    background-color: @cssgnomme_panel_bg !important;
-    background-image: none !important;
-    color: @cssgnomme_panel_fg !important;
-}
-
-/* Backdrop state */
-.titlebar:backdrop:not(headerbar),
-headerbar:backdrop,
-window.csd > .titlebar:backdrop:not(headerbar),
-window.csd > headerbar:backdrop {
-    background-color: @cssgnomme_panel_bg !important;
-    background-image: none !important;
-    color: @cssgnomme_panel_fg !important;
-    opacity: 0.9;
-}
-
-/* Title and subtitle text */
-.titlebar:not(headerbar) .title,
-headerbar .title {
-    color: @cssgnomme_panel_fg;
-}
-
-.titlebar:not(headerbar) .subtitle,
-headerbar .subtitle {
-    color: @cssgnomme_panel_fg;
-    opacity: 0.7;
-}
-`
-        : ""
-}
-
-/*** End ${this.extensionName} ***/
-`;
-    }
-
-    /**
-     * Get GTK4-specific overrides
-     * @param {number} borderRadius - Border radius value in pixels
-     * @returns {string} GTK4 CSS overrides
-     */
-    _getGtk4Overrides(borderRadius) {
-        return `
-/* GTK4 Specific Overrides */
-.card {
-    background: @cssgnomme_popup_bg;
-    border-radius: ${borderRadius}px;
-}
-
-window {
-    border-radius: ${borderRadius}px;
-}
-
-window > box > box > box {
-    border-radius: ${borderRadius}px;
-}
-
-/* GTK4 window decorations */
-windowhandle,
-windowcontrols {
-    border-radius: ${borderRadius}px ${borderRadius}px 0 0;
-}
-
-/* Fix ComboRow dropdown popup border (Adwaita preferences) */
-.menu.background {
-    border: none;
-    box-shadow: none;
-    background: transparent;
-}
-
-.menu > arrow {
-    border: none;
-    background: transparent;
-}
-`;
+        // Delegate to cssTemplates for complete CSS generation
+        return this._cssTemplates.getGtkOverlayCss(
+            this.extensionName,
+            timestamp,
+            version,
+            importSource,
+            baseThemeExists,
+            isDark,
+            colorSettings,
+            borderRadius,
+            accentColor,
+            themeIsLight,
+            isZorinTheme,
+            enableZorinIntegration
+        );
     }
 
     /**
@@ -1086,17 +1023,143 @@ windowcontrols {
     }
 
     /**
+     * Get cached accent color or parse if not cached
+     * Cache key includes color-scheme to handle light/dark theme variants
+     * @param {string} sourcePath - Theme directory path
+     * @returns {Array|null} RGB array [r, g, b] or null if not found
+     */
+    _getCachedAccentColor(sourcePath) {
+        // Get current color-scheme for cache key (light themes may have different accents)
+        const colorScheme = this._getSystemColorScheme();
+        const cacheKey = `${sourcePath}:${colorScheme}`;
+
+        if (this._accentColorCache.has(cacheKey)) {
+            this._accentCacheStats.hits++;
+            this._logger.debug(` ✅ Accent color cache HIT: ${cacheKey}`);
+            return this._accentColorCache.get(cacheKey);
+        }
+
+        this._accentCacheStats.misses++;
+        this._logger.debug(` ❌ Accent color cache MISS: ${cacheKey}`);
+        const accentColor = this._parseThemeAccentColor(sourcePath); // Original parsing logic
+        this._accentColorCache.set(cacheKey, accentColor);
+
+        return accentColor;
+    }
+
+    /**
+     * Clear accent color cache
+     * Called on source theme change or extension disable
+     */
+    _clearAccentColorCache() {
+        const size = this._accentColorCache.size;
+        this._accentColorCache.clear();
+        this._accentCacheStats = { hits: 0, misses: 0 };
+        if (size > 0) {
+            this._logger.debug(` Accent color cache cleared (${size} entries)`);
+        }
+    }
+
+    /**
+     * Parse GTK4 @accent_bg_color from gtk-4.0/gtk.css or gtk-dark.css
+     * GTK4 libadwaita uses @accent_bg_color consistently across themes
+     * This is the most reliable source for modern themes (Fluent, Zorin, etc.)
+     * @param {string} sourcePath - Source theme path
+     * @returns {Object|null} {color: [r,g,b], source: string, isValid: boolean} or null
+     */
+    _parseGtk4AccentColor(sourcePath) {
+        // Try gtk-dark.css first if dark theme, then gtk.css
+        const isDarkTheme = this._systemPrefersDark();
+        const cssFiles = isDarkTheme
+            ? [`${sourcePath}/gtk-4.0/gtk-dark.css`, `${sourcePath}/gtk-4.0/gtk.css`]
+            : [`${sourcePath}/gtk-4.0/gtk.css`, `${sourcePath}/gtk-4.0/gtk-dark.css`];
+
+        for (const cssPath of cssFiles) {
+            const cssFile = Gio.File.new_for_path(cssPath);
+
+            if (!cssFile.query_exists(null)) {
+                continue; // Try next file
+            }
+
+            try {
+                const { success, contents } = this._readCSSFileSync(cssFile);
+                if (!success) {
+                    continue;
+                }
+
+                const cssText = new TextDecoder().decode(contents);
+
+                // Pattern: @define-color accent_bg_color #xxxxxx
+                const accentMatch = cssText.match(/@define-color\s+accent_bg_color\s+#([0-9a-fA-F]{6})/);
+
+                if (accentMatch) {
+                    const hex = accentMatch[1];
+                    const r = parseInt(hex.substring(0, 2), 16);
+                    const g = parseInt(hex.substring(2, 4), 16);
+                    const b = parseInt(hex.substring(4, 6), 16);
+
+                    // Validate accent color
+                    const validation = ThemeUtils.isValidAccent(r, g, b);
+                    const cssFileName = cssPath.split("/").pop();
+
+                    if (validation.isValid) {
+                        this._logger.info(
+                            ` Parsed GTK4 @accent_bg_color from ${cssFileName}: rgb(${r}, ${g}, ${b}) - ${validation.reason}`
+                        );
+                        return {
+                            color: [r, g, b],
+                            source: `GTK4 ${cssFileName}`,
+                            isValid: true
+                        };
+                    } else {
+                        this._logger.debug(
+                            ` Rejected GTK4 @accent_bg_color from ${cssFileName}: rgb(${r}, ${g}, ${b}) - ${validation.reason}`
+                        );
+                        return {
+                            color: [r, g, b],
+                            source: `GTK4 ${cssFileName}`,
+                            isValid: false
+                        };
+                    }
+                }
+            } catch (e) {
+                this._logger.debug(` Error reading GTK4 CSS ${cssPath}: ${e.message}`);
+            }
+        }
+
+        return null; // No GTK4 accent color found
+    }
+
+    /**
      * Parse theme accent color from CSS with priority order:
-     * 1. GTK switch:checked background (most reliable accent)
-     * 2. GTK @theme_selected_bg_color
+     * 0. GTK4 @accent_bg_color (highest priority - modern themes)
+     * 1. GTK3 switch:checked background (reliable for legacy themes)
+     * 2. GTK3 @theme_selected_bg_color (fallback)
      * 3. GNOME Shell stage color (if saturated enough)
-     * 4. Most frequent saturated color (fallback)
-     * Looks for common accent color patterns (stage color, button checked color, most frequent color)
+     * 4. Most frequent saturated color (last resort)
      * @param {string} sourcePath - Source theme path
      * @returns {Array|null} [r, g, b] array or null if not found
      */
     _parseThemeAccentColor(sourcePath) {
-        // Priority 1 & 2: Check GTK-3.0 CSS first
+        // Priority 0: GTK4 @accent_bg_color (libadwaita - most reliable for modern themes)
+        const gtk4Result = this._parseGtk4AccentColor(sourcePath);
+        if (gtk4Result && gtk4Result.isValid) {
+            let [r, g, b] = gtk4Result.color;
+
+            // Depastelify for dark themes
+            const isDarkTheme = this._systemPrefersDark();
+            if (isDarkTheme) {
+                const result = ThemeUtils.depastelizeAccent(r, g, b);
+                if (result.transformed) {
+                    [r, g, b] = result.rgb;
+                    this._logger.info(` Depastelized GTK4 accent: ${result.before} → ${result.after}`);
+                }
+            }
+
+            return [r, g, b];
+        }
+
+        // Priority 1 & 2: Check GTK-3.0 CSS (fallback for themes without GTK4)
         const gtkCssFile = Gio.File.new_for_path(`${sourcePath}/gtk-3.0/gtk.css`);
 
         if (gtkCssFile.query_exists(null)) {
@@ -1107,7 +1170,10 @@ windowcontrols {
 
                     // Priority 1: switch:checked { background-color: #xxxxxx }
                     // This is the most reliable accent color in most themes
-                    const switchMatch = cssText.match(/switch:checked\s*\{[^}]*background-color:\s*#([0-9a-fA-F]{6})/);
+                    // CRITICAL: (?!:) negative lookahead prevents matching :hover/:active/:disabled states
+                    const switchMatch = cssText.match(
+                        /switch:checked(?!:)\s*\{[^}]*background-color:\s*#([0-9a-fA-F]{6})/
+                    );
 
                     if (switchMatch) {
                         const hex = switchMatch[1];
@@ -1115,22 +1181,28 @@ windowcontrols {
                         let g = parseInt(hex.substring(2, 4), 16);
                         let b = parseInt(hex.substring(4, 6), 16);
 
-                        // Verify it's a saturated color (not gray/white)
-                        const maxChannel = Math.max(r, g, b);
-                        const minChannel = Math.min(r, g, b);
-                        const saturation = maxChannel - minChannel;
+                        // Validate accent color (reject grey/white/black)
+                        const validation = ThemeUtils.isValidAccent(r, g, b);
 
-                        if (saturation > 30) {
-                            // Enhance pastel colors for dark themes (use system color scheme)
+                        if (validation.isValid) {
+                            // Depastelify accent colors for dark themes (Zorin Dark fix)
                             const isDarkTheme = this._systemPrefersDark();
                             if (isDarkTheme) {
-                                const enhanced = ThemeUtils.enhancePastelColor([r, g, b]);
-                                [r, g, b] = enhanced;
-                                this._logger.info(` Enhanced pastel accent for dark theme: rgb(${r}, ${g}, ${b})`);
+                                const result = ThemeUtils.depastelizeAccent(r, g, b);
+                                if (result.transformed) {
+                                    [r, g, b] = result.rgb;
+                                    this._logger.info(` Depastelized accent: ${result.before} → ${result.after}`);
+                                }
                             }
 
-                            this._logger.info(` Parsed accent from GTK switch:checked: rgb(${r}, ${g}, ${b})`);
+                            this._logger.info(
+                                ` Parsed accent from GTK switch:checked: rgb(${r}, ${g}, ${b}) - ${validation.reason}`
+                            );
                             return [r, g, b];
+                        } else {
+                            this._logger.debug(
+                                ` Rejected switch:checked color rgb(${r}, ${g}, ${b}) - ${validation.reason}`
+                            );
                         }
                     }
 
@@ -1145,22 +1217,28 @@ windowcontrols {
                         let g = parseInt(hex.substring(2, 4), 16);
                         let b = parseInt(hex.substring(4, 6), 16);
 
-                        // Verify saturation
-                        const maxChannel = Math.max(r, g, b);
-                        const minChannel = Math.min(r, g, b);
-                        const saturation = maxChannel - minChannel;
+                        // Validate accent color (reject grey/white/black)
+                        const validation = ThemeUtils.isValidAccent(r, g, b);
 
-                        if (saturation > 30) {
-                            // Enhance pastel colors for dark themes (use system color scheme)
+                        if (validation.isValid) {
+                            // Depastelify accent colors for dark themes (Zorin Dark fix)
                             const isDarkTheme = this._systemPrefersDark();
                             if (isDarkTheme) {
-                                const enhanced = ThemeUtils.enhancePastelColor([r, g, b]);
-                                [r, g, b] = enhanced;
-                                this._logger.info(` Enhanced pastel accent for dark theme: rgb(${r}, ${g}, ${b})`);
+                                const result = ThemeUtils.depastelizeAccent(r, g, b);
+                                if (result.transformed) {
+                                    [r, g, b] = result.rgb;
+                                    this._logger.info(` Depastelized accent: ${result.before} → ${result.after}`);
+                                }
                             }
 
-                            this._logger.info(` Parsed accent from GTK theme_selected_bg_color: rgb(${r}, ${g}, ${b})`);
+                            this._logger.info(
+                                ` Parsed accent from GTK theme_selected_bg_color: rgb(${r}, ${g}, ${b}) - ${validation.reason}`
+                            );
                             return [r, g, b];
+                        } else {
+                            this._logger.debug(
+                                ` Rejected theme_selected_bg_color rgb(${r}, ${g}, ${b}) - ${validation.reason}`
+                            );
                         }
                     }
                 }
@@ -1211,56 +1289,16 @@ windowcontrols {
                 }
             }
 
-            // Priority 4: Find most frequent saturated hex color (fallback)
-            const hexMatches = cssText.match(/#([0-9a-fA-F]{6})/g) || [];
-            const colorFrequency = new Map();
-
-            hexMatches.forEach(hex => {
-                const hexClean = hex.substring(1);
-                const r = parseInt(hexClean.substring(0, 2), 16);
-                const g = parseInt(hexClean.substring(2, 4), 16);
-                const b = parseInt(hexClean.substring(4, 6), 16);
-
-                // Only count saturated colors (not grays/whites/blacks)
-                const maxChannel = Math.max(r, g, b);
-                const minChannel = Math.min(r, g, b);
-                const saturation = maxChannel - minChannel;
-
-                // Relaxed filter to include various accent colors
-                if (saturation > 30 && maxChannel > 60 && maxChannel < 250) {
-                    const count = colorFrequency.get(hex) || 0;
-                    colorFrequency.set(hex, count + 1);
-                }
-            });
-
-            if (colorFrequency.size > 0) {
-                // Find most frequent color
-                let maxCount = 0;
-                let accentHex = null;
-
-                colorFrequency.forEach((count, hex) => {
-                    if (count > maxCount) {
-                        maxCount = count;
-                        accentHex = hex;
-                    }
-                });
-
-                if (accentHex) {
-                    const hexClean = accentHex.substring(1);
-                    const r = parseInt(hexClean.substring(0, 2), 16);
-                    const g = parseInt(hexClean.substring(2, 4), 16);
-                    const b = parseInt(hexClean.substring(4, 6), 16);
-                    this._logger.info(
-                        ` Parsed accent from most frequent Shell color: rgb(${r}, ${g}, ${b}) (${maxCount} occurrences)`
-                    );
-                    return [r, g, b];
-                }
-            }
+            // Priority 4 REMOVED: Don't fallback to random Shell colors
+            // User expectation: "kad korisnik klikne grey, mora dobiti grey"
+            // Wallpaper colors (panel/popup) are handled separately by colorPalette.js
         } catch (e) {
             this._logger.info(` Error parsing Shell CSS: ${e.message}`);
         }
 
-        this._logger.info(` No accent color found in theme at ${sourcePath}`);
+        // No valid accent color found - return NULL
+        // This respects neutral/grey theme choice (no forced colors)
+        this._logger.info(` No valid accent color found in theme at ${sourcePath} (neutral/grey theme)`);
         return null;
     }
 
@@ -1408,7 +1446,7 @@ windowcontrols {
     detectAndApplyAccentColor(sourcePath, settings, isLightTheme = null) {
         try {
             this._logger.info(` Starting accent color detection for theme: ${sourcePath}`);
-            const accentColor = this._parseThemeAccentColor(sourcePath);
+            const accentColor = this._getCachedAccentColor(sourcePath);
 
             // Use provided theme brightness or detect if not provided
             const themeIsLight = isLightTheme !== null ? isLightTheme : this._isLightTheme(sourcePath);
@@ -1538,6 +1576,7 @@ windowcontrols {
         // === BASE THEME CACHE (TIER 1 OPTIMIZATION) ===
         // Create cache key from immutable parameters
         const tintStrength = settings.get_int("zorin-tint-strength") || 0;
+        // Note: borderRadius removed from cache key (v2.5.1) - Quick Settings CSS moved to component cache
         const cacheKey = `shell-base:${sourceThemeName}:${tintStrength}:${enableZorinIntegration}`;
 
         // Check cache first
@@ -1616,44 +1655,35 @@ windowcontrols {
         // === UNIVERSAL MODIFICATIONS (all themes) ===
 
         // 1. Replace stage color with neutral (removes color tint effect)
-        const neutralStageColor = isLightTheme ? "#2e3436" : "#eeeeec";
+        const neutralStageColor = isLightTheme
+            ? Constants.NEUTRAL_STAGE_COLORS.light
+            : Constants.NEUTRAL_STAGE_COLORS.dark;
         cssText = cssText.replace(/stage\s*\{([^}]*?)color:\s*[^;}]+;/g, `stage {$1color: ${neutralStageColor};`);
         this._logger.info(` Set neutral stage color: ${neutralStageColor}`);
+
+        // Quick Settings CSS removed from base-theme (v2.5.1 fix)
+        // Moved to component CSS for dynamic updates on border-radius change
+        // See: _generateShellCss() line ~2230
 
         // === FLUENT-SPECIFIC MODIFICATIONS ===
 
         if (!isZorinTheme && enableZorinIntegration) {
-            // Add titlebar CSS at the end for higher specificity
-            const accentColor = this._parseThemeAccentColor(sourcePath);
+            // Add titlebar CSS at the end for higher specificity (cached accent color)
+            const accentColor = this._getCachedAccentColor(sourcePath);
             const accentRgb = accentColor ? `${accentColor[0]}, ${accentColor[1]}, ${accentColor[2]}` : "100, 100, 100";
 
-            const titlebarCss = `
-/* CSSGnomme: Fluent Theme titlebar fix - added at end for highest specificity */
+            // Sprint 5.0: Fluent Theme titlebar fix (cached template method)
+            const titlebarCss = this._cssTemplates.getShellFluentTitlebarFix(accentRgb, isLightTheme);
 
-.titlebar:not(headerbar),
-headerbar,
-window.csd > .titlebar:not(headerbar),
-window.csd > headerbar,
-window.solid-csd > .titlebar,
-.solid-csd headerbar,
-.default-decoration.titlebar:not(headerbar),
-headerbar.default-decoration {
-    background-color: rgba(${accentRgb}, ${Constants.ACCENT_HOVER_OPACITY.medium}) !important;
-    background-image: none !important;
-    color: ${isLightTheme ? "#2e3436" : "#eeeeec"} !important;
-}
+            // Sprint 5.1: Zorin Accent Color Gradient Fixes for Third-Party Themes
+            const gradientFixCss = this._cssTemplates.getShellZorinGradientFixes(accentRgb);
 
-.titlebar:backdrop:not(headerbar),
-headerbar:backdrop,
-window.csd > .titlebar:backdrop:not(headerbar),
-window.csd > headerbar:backdrop {
-    background-color: rgba(${accentRgb}, ${Constants.ACCENT_HOVER_OPACITY.subtle}) !important;
-    opacity: 0.9;
-}
-`;
-
-            cssText += titlebarCss;
-            this._logger.info(` Added Fluent titlebar CSS (${titlebarCss.length} bytes)`);
+            cssText += titlebarCss + gradientFixCss;
+            this._logger.info(
+                ` Added Fluent titlebar CSS + Zorin gradient fixes (${
+                    titlebarCss.length + gradientFixCss.length
+                } bytes)`
+            );
         }
 
         // === RETURN MODIFIED CSS ===
@@ -1701,7 +1731,7 @@ window.csd > headerbar:backdrop {
      * @returns {Object} Unified color settings with panel and popup information
      */
     _extractColorSettings(sourcePath, settings) {
-        const panelOpacity = settings.get_double("panel-opacity") || 0.8;
+        const panelOpacity = settings.get_double("panel-opacity") || Constants.DEFAULT_OPACITY.panel;
         const menuOpacity = settings.get_double("menu-opacity") || 0.9;
         const themePanelColor = this._parseThemePanelColor(sourcePath);
 
@@ -1773,6 +1803,13 @@ window.csd > headerbar:backdrop {
         const popupHover = ThemeUtils.getAutoHighlightColor(popupRgba.slice(0, 3));
         const popupFg = ThemeUtils.getAutoFgColor(popupRgba.slice(0, 3));
 
+        // === GENERATE CSS STRINGS FOR TEMPLATES ===
+        const panelFgCss = ThemeUtils.rgbaToCss(...panelFg, 1.0);
+        const panelHoverCss = ThemeUtils.rgbaToCss(...panelHover, panelRgba[3] || 1.0);
+        const panelSolidCss = ThemeUtils.rgbaToCss(panelRgba[0], panelRgba[1], panelRgba[2], 1.0);
+        const popupFgCss = ThemeUtils.rgbaToCss(...popupFg, 1.0);
+        const popupHoverCss = ThemeUtils.rgbaToCss(...popupHover, popupRgba[3] || 1.0);
+
         return {
             panel: {
                 color: panelColor,
@@ -1781,7 +1818,11 @@ window.csd > headerbar:backdrop {
                 override: panelOverride,
                 opacity: panelOpacity,
                 hover: panelHover,
-                fg: panelFg
+                fg: panelFg,
+                // Pre-generated CSS strings for templates
+                fgCss: panelFgCss,
+                hoverCss: panelHoverCss,
+                solidCss: panelSolidCss
             },
             popup: {
                 color: popupColor,
@@ -1790,7 +1831,10 @@ window.csd > headerbar:backdrop {
                 override: popupOverride,
                 opacity: menuOpacity,
                 hover: popupHover,
-                fg: popupFg
+                fg: popupFg,
+                // Pre-generated CSS strings for templates
+                fgCss: popupFgCss,
+                hoverCss: popupHoverCss
             },
             themePanelColor: themePanelColor
         };
@@ -1816,8 +1860,8 @@ window.csd > headerbar:backdrop {
         const sourceThemeName = settings.get_string("overlay-source-theme") || "Unknown";
         const isZorinTheme = sourceThemeName.toLowerCase().includes("zorin");
 
-        // Parse theme accent color for blur effects and borders
-        const accentColor = this._parseThemeAccentColor(sourcePath);
+        // Parse theme accent color for blur effects and borders (cached for performance)
+        const accentColor = this._getCachedAccentColor(sourcePath);
         const accentRgb = accentColor ? `${accentColor[0]}, ${accentColor[1]}, ${accentColor[2]}` : "253, 180, 180"; // Default to red-ish
 
         // Get blur-border-color from settings (can be overridden by color extraction)
@@ -1871,7 +1915,8 @@ window.csd > headerbar:backdrop {
         const shadowStrength = settings.get_double("shadow-strength") || 0.3; // Now controls shadow spread
 
         // Parse blur-background color (tint overlay - white for light theme, dark for dark theme)
-        const blurBackgroundStr = settings.get_string("blur-background") || "rgba(0, 0, 0, 0.3)";
+        const blurBackgroundStr =
+            settings.get_string("blur-background") || Constants.INITIALIZATION_DEFAULTS.blurBackground;
         const blurBgMatch = blurBackgroundStr.match(
             /rgba?\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+))?\s*\)/
         );
@@ -1910,12 +1955,12 @@ window.csd > headerbar:backdrop {
         const shadowColorSetting = settings.get_string("shadow-color");
         const shadowColor =
             shadowColorSetting &&
-            shadowColorSetting !== "rgba(255, 255, 255, 0.7)" &&
-            shadowColorSetting !== "rgba(0, 0, 0, 0.7)"
+            shadowColorSetting !== Constants.DEFAULT_SHADOW_COLORS.light &&
+            shadowColorSetting !== Constants.DEFAULT_SHADOW_COLORS.dark
                 ? shadowColorSetting
                 : themeIsLight
-                ? "rgba(255, 255, 255, 0.3)"
-                : "rgba(0, 0, 0, 0.3)"; // Auto-detect fallback with 0.3 alpha
+                ? Constants.DEFAULT_SHADOW_COLORS.lightFallback
+                : Constants.DEFAULT_SHADOW_COLORS.darkFallback; // Auto-detect fallback
 
         // Fixed blur values from constants (commit 94bb07e)
         const shadowPanelBlur = Constants.SHADOW_BLUR_VALUES.panel;
@@ -2167,7 +2212,18 @@ window.csd > headerbar:backdrop {
         const popupCss = this._generatePopupCss(vars);
         const zorinCss = this._generateZorinCss(vars);
 
-        return this._assembleShellCss(vars, panelCss, popupCss, zorinCss);
+        // Assemble base CSS
+        let shellCss = this._assembleShellCss(vars, panelCss, popupCss, zorinCss);
+
+        // === QUICK SETTINGS BORDER-RADIUS SYNC (v2.5.1) ===
+        // Append Quick Settings CSS OUTSIDE base-theme cache for dynamic updates
+        // This ensures border-radius changes in prefs.js immediately reflect in UI
+        const borderRadius = settings.get_int("border-radius");
+        const quickSettingsCss = this._cssTemplates.getShellQuickSettingsCss(borderRadius);
+        shellCss += "\n" + quickSettingsCss;
+        this._logger.debug(`  Added Quick Settings border-radius sync: ${borderRadius}px`);
+
+        return shellCss;
     }
 
     /**
@@ -2910,6 +2966,19 @@ ${this.extensionName} GNOME Shell Extension
                 `📊 Component Cache Stats: ${this._componentCacheStats.hits} hits, ${this._componentCacheStats.misses} misses (${componentHitRate}% hit rate)`
             );
 
+            // Log accent color cache statistics
+            const accentHitRate =
+                this._accentCacheStats.hits + this._accentCacheStats.misses > 0
+                    ? (
+                          (this._accentCacheStats.hits /
+                              (this._accentCacheStats.hits + this._accentCacheStats.misses)) *
+                          100
+                      ).toFixed(1)
+                    : 0;
+            this._logger.info(
+                `📊 Accent Color Cache Stats: ${this._accentCacheStats.hits} hits, ${this._accentCacheStats.misses} misses (${accentHitRate}% hit rate)`
+            );
+
             // Memory cleanup after successful CSS generation
             this._cssStrings = null;
             if (global.gc) global.gc();
@@ -3097,6 +3166,9 @@ ${this.extensionName} GNOME Shell Extension
                 `🗑️  Cleared component CSS cache: ${cacheSize} entries (${(totalMemory / 1024).toFixed(1)}KB freed)`
             );
         }
+
+        // Clear accent color cache
+        this._clearAccentColorCache();
 
         // Cancel pending GLib timers to prevent memory leaks
         if (this._pendingTimers && this._pendingTimers.length > 0) {

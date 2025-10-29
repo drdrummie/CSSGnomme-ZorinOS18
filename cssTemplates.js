@@ -214,6 +214,12 @@ ${modifiedCss}
      * @returns {string} Accent color CSS
      */
     getZorinAccentStyle(accentRgb, isDark) {
+        // Null guard: Skip Zorin accent CSS if no valid color detected
+        // This handles neutral/grey themes (e.g., ZorinGrey-Dark) gracefully
+        if (!accentRgb || accentRgb === null || accentRgb === "null") {
+            return "/* Zorin accent color not detected - using theme defaults (neutral/grey theme) */\n";
+        }
+
         const cacheKey = `zorin_accent_${accentRgb}_${isDark}`;
 
         if (this._templateCache.has(cacheKey)) {
@@ -222,23 +228,78 @@ ${modifiedCss}
 
         // Enhanced pastel for dark themes
         const displayColor = isDark ? this._enhancePastelForDark(accentRgb) : accentRgb;
+        // Generate foreground color with proper contrast
+        const fgColor = isDark ? Constants.AUTO_TEXT_COLORS.lightHex : Constants.AUTO_TEXT_COLORS.darkHex; // Contrasting text color
 
         const css = `
-/* Zorin Theme Accent Color */
+/* Zorin Theme Accent Color Variables */
 @define-color accent_color ${displayColor};
 @define-color accent_bg_color ${displayColor};
+@define-color accent_fg_color ${fgColor};
 
-/* Switch widget */
+/* ===== MINIMAL MODE - ONLY CORE WIDGETS ===== */
+/* Temporarily disabled hover/selection overrides for debugging */
+
+/* Switch widget - track (container) */
 switch:checked {
     background-color: ${displayColor};
+    background-image: image(${displayColor});
     border-color: ${displayColor};
 }
 
-/* Selected items */
-.selected,
-*:selected {
+/* Switch slider - contrasting color for visibility */
+switch:checked > slider {
+    background-color: ${fgColor};
+}
+
+/* Checkboxes and Radio buttons - use accent color */
+check:checked,
+check:indeterminate,
+radio:checked,
+radio:indeterminate {
+    background-color: ${displayColor};
+    background-image: image(${displayColor});
+    border-color: ${displayColor};
+    color: ${fgColor};
+    box-shadow: none;
+}
+
+/* Progress bars */
+progressbar > trough > progress {
     background-color: ${displayColor};
 }
+
+/* ===== DISABLED FOR DEBUGGING (v2.5 testing) ===== */
+/* Uncomment below to re-enable hover/selection styling */
+
+/*
+/ * Selected items in lists - subtle transparency (v2.5 Full Auto Mode) * /
+row.activatable:selected,
+.view:selected,
+.view:selected:focus,
+.view text:selected,
+.view text:selected:focus,
+textview text:selected,
+textview text:selected:focus,
+iconview:selected,
+iconview:selected:focus,
+flowbox > flowboxchild:selected,
+.content-view .tile:selected {
+    background-color: alpha(${displayColor}, 0.20);
+    color: inherit;
+}
+
+/ * Links hover state * /
+link:hover {
+    color: ${displayColor};
+}
+
+/ * Spinbutton/Entry progress indicator * /
+spinbutton > progress > trough > progress,
+entry > progress > trough > progress {
+    background-color: ${displayColor};
+}
+*/
 `;
 
         this._templateCache.set(cacheKey, css);
@@ -261,18 +322,312 @@ switch:checked {
 
         const css = `
 /* GTK4 Specific Overrides */
-popover.menu {
+.card {
+    background: @cssgnomme_popup_bg;
     border-radius: ${borderRadius}px;
 }
 
-/* GTK4 Window decorations */
-headerbar {
+window {
+    border-radius: ${borderRadius}px;
+}
+
+window > box > box > box {
+    border-radius: ${borderRadius}px;
+}
+
+/* GTK4 window decorations */
+windowhandle,
+windowcontrols {
     border-radius: ${borderRadius}px ${borderRadius}px 0 0;
+}
+
+/* Fix ComboRow dropdown popup border (Adwaita preferences) */
+.menu.background {
+    border: none;
+    box-shadow: none;
+    background: transparent;
+}
+
+.menu > arrow {
+    border: none;
+    background: transparent;
 }
 `;
 
         this._templateCache.set(cacheKey, css);
         return css;
+    }
+
+    // ===== GTK OVERLAY CSS COMPONENTS =====
+
+    /**
+     * Generate GTK CSS variables section
+     * @param {Object} colorSettings - Color settings from _extractColorSettings
+     * @returns {string} CSS variables
+     */
+    getGtkCssVariables(colorSettings) {
+        return `
+/*** CSSGnomme CSS Variables ***/
+
+@define-color cssgnomme_panel_bg ${colorSettings.panel.color};
+@define-color cssgnomme_panel_fg ${colorSettings.panel.fgCss};
+@define-color cssgnomme_panel_hover ${colorSettings.panel.hoverCss};
+@define-color cssgnomme_panel_solid_bg ${colorSettings.panel.solidCss};
+
+@define-color cssgnomme_popup_bg ${colorSettings.popup.color};
+@define-color cssgnomme_popup_fg ${colorSettings.popup.fgCss};
+@define-color cssgnomme_popup_hover ${colorSettings.popup.hoverCss};
+`;
+    }
+
+    /**
+     * Generate HeaderBar styling
+     * @param {number} borderRadius - Border radius value
+     * @returns {string} HeaderBar CSS
+     */
+    getGtkHeaderBarStyle(borderRadius) {
+        return `
+/* HeaderBar Styling - only top corners rounded (window continues below) */
+headerbar {
+    background: @cssgnomme_panel_solid_bg;
+    color: @cssgnomme_panel_fg;
+    border-radius: ${borderRadius}px ${borderRadius}px 0 0;
+}
+
+headerbar button {
+    border-radius: calc(${borderRadius}px * ${Constants.BORDER_RADIUS_SCALING.panelButton});
+}
+
+/* ===== DISABLED FOR DEBUGGING (v2.5 testing) ===== */
+/* Temporarily removed to test theme default behavior */
+
+/*
+headerbar button:hover {
+    background: @cssgnomme_panel_hover;
+    border-radius: inherit;
+}
+
+/ * Window control buttons ONLY - remove theme shadow/outline effects * /
+headerbar.titlebar button.titlebutton,
+headerbar windowcontrols button,
+headerbar .windowcontrols button {
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+headerbar.titlebar button.titlebutton:hover,
+headerbar windowcontrols button:hover,
+headerbar .windowcontrols button:hover {
+    box-shadow: none !important;
+    outline: none !important;
+    border-radius: inherit;
+}
+
+/ * Remove pseudo-elements that might create extra visual elements * /
+headerbar.titlebar button.titlebutton::before,
+headerbar.titlebar button.titlebutton::after,
+headerbar windowcontrols button::before,
+headerbar windowcontrols button::after {
+    display: none !important;
+    content: none !important;
+}
+*/
+`;
+    }
+
+    /**
+     * Generate Window styling (CSD decorations)
+     * @param {number} borderRadius - Border radius value
+     * @returns {string} Window CSS
+     */
+    getGtkWindowStyle(borderRadius) {
+        return `
+/* Window Styling - Client-Side Decorations */
+window.csd,
+window.csd decoration,
+window.solid-csd decoration {
+    border-radius: ${borderRadius}px;
+}
+
+/* Window background */
+window.background {
+    border-radius: ${borderRadius}px;
+}
+
+/* Dialogs and floating windows */
+dialog.background,
+.dialog-vbox {
+    border-radius: ${borderRadius}px;
+}
+`;
+    }
+
+    /**
+     * Generate Popover/Menu styling
+     * @param {number} borderRadius - Border radius value
+     * @returns {string} Popover CSS
+     */
+    getGtkPopoverStyle(borderRadius) {
+        return `
+/* Popover/Menu Styling - Fixed transparent backgrounds (v2.4.1) */
+popover.background,
+popover.menu,
+.popup-menu,
+.menu.background {
+    background-color: @cssgnomme_popup_bg;
+    color: @cssgnomme_popup_fg;
+    border-radius: ${borderRadius}px;
+}
+
+/* Note: Removed 'popover.background > contents { background: transparent; }'
+ * which was causing invisible menus in Nautilus, Extension Manager, etc.
+ * GTK4 handles content background automatically.
+ */
+`;
+    }
+
+    /**
+     * Generate Tooltip styling
+     * @param {number} borderRadius - Border radius value
+     * @returns {string} Tooltip CSS
+     */
+    getGtkTooltipStyle(borderRadius) {
+        return `
+/* Tooltip Styling */
+tooltip.background {
+    background: @cssgnomme_popup_bg;
+    color: @cssgnomme_popup_fg;
+    border-radius: calc(${borderRadius}px * 0.5);
+}
+`;
+    }
+
+    /**
+     * Generate Fluent theme titlebar fix (non-Zorin themes with Zorin integration)
+     * @param {boolean} isZorinTheme - Is current theme a Zorin theme
+     * @param {boolean} enableZorinIntegration - Is Zorin integration enabled
+     * @returns {string} Fluent titlebar CSS or empty string
+     */
+    getFluentTitlebarFix(isZorinTheme, enableZorinIntegration) {
+        if (isZorinTheme || !enableZorinIntegration) {
+            return "";
+        }
+
+        return `
+/* Fluent Theme: Window titlebar styling to match Zorin behavior when integration enabled */
+/* IMPORTANT: This must be at the end to override Fluent's own headerbar rules */
+
+/* Main titlebar/headerbar selectors - cover all window types */
+.titlebar:not(headerbar),
+headerbar,
+window.csd > .titlebar:not(headerbar),
+window.csd > headerbar,
+window.solid-csd > .titlebar,
+.solid-csd headerbar,
+.default-decoration.titlebar:not(headerbar),
+headerbar.default-decoration {
+    background-color: @cssgnomme_panel_bg !important;
+    background-image: none !important;
+    color: @cssgnomme_panel_fg !important;
+}
+
+/* Backdrop state */
+.titlebar:backdrop:not(headerbar),
+headerbar:backdrop,
+window.csd > .titlebar:backdrop:not(headerbar),
+window.csd > headerbar:backdrop {
+    background-color: @cssgnomme_panel_bg !important;
+    background-image: none !important;
+    color: @cssgnomme_panel_fg !important;
+    opacity: 0.9;
+}
+
+/* Title and subtitle text */
+.titlebar:not(headerbar) .title,
+headerbar .title {
+    color: @cssgnomme_panel_fg;
+}
+
+.titlebar:not(headerbar) .subtitle,
+headerbar .subtitle {
+    color: @cssgnomme_panel_fg;
+    opacity: 0.7;
+}
+`;
+    }
+
+    /**
+     * Generate complete GTK overlay CSS (imports + overrides)
+     * @param {string} extensionName - Extension name
+     * @param {string} timestamp - Generation timestamp
+     * @param {string} version - GTK version (gtk-3.0, gtk-4.0)
+     * @param {string} importSource - Import source path
+     * @param {boolean} baseThemeExists - Does base-theme.css exist
+     * @param {boolean} isDark - Is dark variant
+     * @param {Object} colorSettings - Color settings from _extractColorSettings
+     * @param {number} borderRadius - Border radius value
+     * @param {Array|null} accentColor - Accent color [r, g, b] or null
+     * @param {boolean} themeIsLight - Is theme light mode
+     * @param {boolean} isZorinTheme - Is Zorin theme
+     * @param {boolean} enableZorinIntegration - Enable Zorin integration
+     * @returns {string} Complete GTK CSS
+     */
+    getGtkOverlayCss(
+        extensionName,
+        timestamp,
+        version,
+        importSource,
+        baseThemeExists,
+        isDark,
+        colorSettings,
+        borderRadius,
+        accentColor,
+        themeIsLight,
+        isZorinTheme,
+        enableZorinIntegration
+    ) {
+        const importNote = baseThemeExists
+            ? "Modified base theme (tint removed)"
+            : "Original theme (base-theme not found, using fallback)";
+
+        return `/*
+ * ${extensionName} Overlay Theme - ${isDark ? "Dark" : "Light"} Variant
+ * Generated: ${timestamp}
+ * Source: ${importNote}
+ * GTK Version: ${version}
+ */
+
+/* Import ${baseThemeExists ? "modified base theme (tint removed)" : "original theme (fallback)"} */
+@import url("${importSource}");
+
+${this.getGtkCssVariables(colorSettings)}
+
+/*** ${extensionName} Overrides ***/
+
+${this.getGtkHeaderBarStyle(borderRadius)}
+
+${this.getGtkWindowStyle(borderRadius)}
+
+${this.getGtkPopoverStyle(borderRadius)}
+
+${this.getGtkTooltipStyle(borderRadius)}
+
+${version === "gtk-4.0" ? this.getGtk4Overrides(borderRadius) : ""}
+
+${
+    // Only generate Zorin accent CSS if:
+    // 1. Accent color exists (not null/undefined)
+    // 2. Array has 3 valid RGB values
+    // This respects neutral/grey theme choice (no forced colors)
+    accentColor && Array.isArray(accentColor) && accentColor.length === 3
+        ? this.getZorinAccentStyle(`rgb(${accentColor[0]}, ${accentColor[1]}, ${accentColor[2]})`, !themeIsLight)
+        : "/* No valid accent color detected - using theme defaults */\n"
+}
+
+${this.getFluentTitlebarFix(isZorinTheme, enableZorinIntegration)}
+
+/*** End ${extensionName} ***/
+`;
     }
 
     // ===== SHADOW EFFECTS =====
@@ -998,6 +1353,278 @@ ${
     margin-right: 10px !important;
 }
 `;
+    }
+
+    /**
+     * Generate Zorin OS gradient fixes for third-party Shell themes (Sprint 5.1)
+     * Disables unwanted Zorin accent color gradient on Quick Settings, Calendar, Screenshot UI, etc.
+     * @param {string} accentRgb - Accent color as "r, g, b" string
+     * @returns {string} Gradient fix CSS
+     */
+    getShellZorinGradientFixes(accentRgb) {
+        const cacheKey = `shell_zorin_gradient_${accentRgb}`;
+
+        if (this._templateCache.has(cacheKey)) {
+            return this._templateCache.get(cacheKey);
+        }
+
+        const css = `
+/* CSSGnomme: Zorin OS Gradient Fixes for Third-Party Shell Themes (Sprint 5.1) */
+/* Fixes unwanted accent color gradient on Quick Settings, Calendar, Screenshot UI, etc. */
+/* Community-verified solution: https://forum.zorin.com/t/dark-themes-with-blue-text-bug/39017/26 */
+
+/* Quick Settings - Main Fix */
+.quick-toggle:checked {
+    transition-duration: 150ms;
+    color: white;
+    background-gradient-direction: none;
+    box-shadow: none;
+}
+
+.quick-toggle:checked:hover,
+.quick-toggle:checked:focus {
+    box-shadow: 0 2px 4px rgba(${accentRgb}, 0.1);
+}
+
+.quick-toggle-menu .header .icon.active {
+    color: white;
+    background-gradient-direction: none;
+}
+
+/* Calendar - Today's date gradient fix */
+.calendar .calendar-today {
+    font-weight: 800;
+    color: white !important;
+    background-gradient-direction: none;
+    box-shadow: 0 2px 4px rgba(${accentRgb}, 0.2);
+}
+
+.calendar .calendar-today:active,
+.calendar .calendar-today:selected {
+    background-gradient-direction: none;
+    color: inherit;
+    box-shadow: 0 2px 4px rgba(${accentRgb}, 0.2);
+}
+
+/* Screenshot UI - Button gradient fix */
+.screenshot-ui-show-pointer-button:outlined,
+.screenshot-ui-type-button:outlined,
+.screenshot-ui-show-pointer-button:checked,
+.screenshot-ui-type-button:checked {
+    transition-duration: 150ms;
+    color: white;
+    background-gradient-direction: none;
+    box-shadow: none;
+}
+
+/* General checked/active states */
+#LookingGlassDialog > #Toolbar .lg-toolbar-button:checked,
+.app-folder-dialog .folder-name-container .edit-folder-button:checked,
+.button:checked,
+.icon-button:checked {
+    transition-duration: 150ms;
+    color: white;
+    background-gradient-direction: none;
+    box-shadow: none;
+}
+
+#LookingGlassDialog > #Toolbar .flat.lg-toolbar-button:checked,
+.app-folder-dialog .folder-name-container .flat.edit-folder-button:checked,
+.flat.button:checked,
+.flat.icon-button:checked {
+    transition-duration: 150ms;
+    color: white;
+    background-gradient-direction: none;
+    box-shadow: none;
+}
+
+.modal-dialog .modal-dialog-linked-button:checked,
+.hotplug-notification-item:checked,
+.notification-banner .notification-button:checked {
+    transition-duration: 150ms;
+    color: white;
+    background-gradient-direction: none;
+    box-shadow: none;
+}
+
+/* Page navigation hints */
+.page-navigation-hint.next:ltr,
+.page-navigation-hint.previous:rtl {
+    background-gradient-start: rgba(18, 51, 84, 0.05);
+    background-gradient-end: transparent;
+    background-gradient-direction: none;
+    border-radius: 24px 0px 0px 24px;
+}
+
+.page-navigation-hint.previous:ltr,
+.page-navigation-hint.next:rtl {
+    background-gradient-start: transparent;
+    background-gradient-end: rgba(18, 51, 84, 0.05);
+    background-gradient-direction: none;
+    border-radius: 0px 24px 24px 0px;
+}
+`;
+
+        this._templateCache.set(cacheKey, css);
+        return css;
+    }
+
+    /**
+     * Generate Shell CSS for Quick Settings border-radius synchronization (v2.5)
+     * Synchronizes Quick Settings toggle buttons and menus with user border-radius setting
+     * Uses Constants.BORDER_RADIUS_SCALING for consistent proportions
+     *
+     * @param {number} borderRadius - User border-radius setting (0-25px)
+     * @returns {string} Quick Settings border-radius CSS
+     */
+    getShellQuickSettingsCss(borderRadius) {
+        if (!borderRadius || borderRadius <= 0) {
+            return "";
+        }
+
+        const cacheKey = `shell_quick_settings_${borderRadius}`;
+
+        if (this._templateCache.has(cacheKey)) {
+            return this._templateCache.get(cacheKey);
+        }
+
+        const toggleRadius = Math.round(borderRadius * Constants.BORDER_RADIUS_SCALING.quickToggle);
+        const arrowRadius = Math.round(borderRadius * Constants.BORDER_RADIUS_SCALING.quickToggleArrow);
+
+        const css = `
+/* CSSGnomme: Quick Settings Border-Radius Sync (v2.5.1) */
+/* Synchronizes Quick Settings elements with user border-radius setting */
+/* HIGH SPECIFICITY: Overrides theme nested selectors (Fluent: 30-40pts, Zorin: 20pts) */
+/* Investigation: docs/QUICK_SETTINGS_CSS_INVESTIGATION.md */
+
+/* Compact height adjustment - Zorin 17 style (user-requested v2.5.1) */
+.quick-settings-grid .quick-toggle,
+.quick-menu-toggle,
+.quick-menu-toggle .quick-toggle,
+.quick-menu-toggle .quick-toggle-arrow {
+    min-height: ${Constants.QUICK_SETTINGS_HEIGHT.baseHeight}px !important;
+    padding: 0 !important;
+}
+
+/* Inner StBoxLayout carries the padding for proper arrow alignment */
+.quick-settings-grid .quick-toggle > StBoxLayout,
+.quick-menu-toggle .quick-toggle > StBoxLayout {
+    padding: 0 12px !important;
+}
+
+/* Individual toggle buttons (WiFi, Bluetooth, Dark Mode, etc.) - Grid items */
+/* Specificity: 20 points (.quick-settings-grid .quick-toggle) */
+.quick-settings-grid .quick-toggle {
+    border-radius: ${toggleRadius}px !important;
+}
+
+.quick-settings-grid .quick-toggle:hover,
+.quick-settings-grid .quick-toggle:focus,
+.quick-settings-grid .quick-toggle:checked {
+    border-radius: ${toggleRadius}px !important;
+}
+
+/* Menu toggle buttons - PARTIAL RADIUS for seamless connection with arrow */
+/* LTR: Toggle rounded on left, flat on right (connects to arrow on right side) */
+/* Specificity: 30 points (.quick-menu-toggle .quick-toggle:ltr) */
+.quick-menu-toggle .quick-toggle:ltr {
+    border-radius: ${toggleRadius}px 0 0 ${toggleRadius}px !important;
+    min-height: ${Constants.QUICK_SETTINGS_HEIGHT.baseHeight}px !important;
+    padding: 0 !important;
+}
+
+/* RTL: Toggle rounded on right, flat on left (connects to arrow on left side) */
+.quick-menu-toggle .quick-toggle:rtl {
+    border-radius: 0 ${toggleRadius}px ${toggleRadius}px 0 !important;
+    min-height: ${Constants.QUICK_SETTINGS_HEIGHT.baseHeight}px !important;
+    padding: 0 !important;
+}
+
+/* CRITICAL: Override :last-child variants (standalone toggles - full radius) */
+/* When toggle has no arrow (standalone), use full border-radius on all corners */
+/* Specificity: 40 points - beats all theme selectors */
+.quick-menu-toggle .quick-toggle:ltr:last-child {
+    border-radius: ${toggleRadius}px !important;
+    min-height: ${Constants.QUICK_SETTINGS_HEIGHT.baseHeight}px !important;
+    padding: 0 !important;
+}
+
+.quick-menu-toggle .quick-toggle:rtl:last-child {
+    border-radius: ${toggleRadius}px !important;
+    min-height: ${Constants.QUICK_SETTINGS_HEIGHT.baseHeight}px !important;
+    padding: 0 !important;
+}
+
+/* Arrow expand buttons - PARTIAL RADIUS for seamless connection with toggle */
+/* LTR: Arrow rounded on right, flat on left (connects to toggle on left side) */
+.quick-menu-toggle .quick-toggle-arrow:ltr {
+    border-radius: 0 ${arrowRadius}px ${arrowRadius}px 0 !important;
+    min-height: ${Constants.QUICK_SETTINGS_HEIGHT.baseHeight}px !important;
+    padding: 0 0.71575em !important; /* Keep horizontal padding for icon, remove vertical */
+}
+
+/* RTL: Arrow rounded on left, flat on right (connects to toggle on right side) */
+.quick-menu-toggle .quick-toggle-arrow:rtl {
+    border-radius: ${arrowRadius}px 0 0 ${arrowRadius}px !important;
+    min-height: ${Constants.QUICK_SETTINGS_HEIGHT.baseHeight}px !important;
+    padding: 0 0.71575em !important; /* Keep horizontal padding for icon, remove vertical */
+}
+
+/* Expanded menu panels (Volume, Brightness sliders) */
+.quick-toggle-menu {
+    border-radius: ${borderRadius}px !important;
+}
+
+/* Header row toggle buttons (top row circular buttons) */
+.quick-settings-grid .header .quick-toggle {
+    border-radius: ${toggleRadius}px !important;
+}
+`;
+
+        this._templateCache.set(cacheKey, css);
+        return css;
+    }
+
+    /**
+     * Generate Shell Fluent titlebar fix CSS (uses accentRgb, not CSS variables)
+     * @param {string} accentRgb - Accent color as "r, g, b" string
+     * @param {boolean} isLightTheme - Whether theme is light mode
+     * @returns {string} Shell titlebar fix CSS
+     */
+    getShellFluentTitlebarFix(accentRgb, isLightTheme) {
+        const cacheKey = `shell_fluent_titlebar_${accentRgb}_${isLightTheme}`;
+
+        if (this._templateCache.has(cacheKey)) {
+            return this._templateCache.get(cacheKey);
+        }
+
+        const css = `
+/* CSSGnomme: Fluent Theme titlebar fix for Shell - added at end for highest specificity */
+
+.titlebar:not(headerbar),
+headerbar,
+window.csd > .titlebar:not(headerbar),
+window.csd > headerbar,
+window.solid-csd > .titlebar,
+.solid-csd headerbar,
+.default-decoration.titlebar:not(headerbar),
+headerbar.default-decoration {
+    background-color: rgba(${accentRgb}, ${Constants.ACCENT_HOVER_OPACITY.medium}) !important;
+    background-image: none !important;
+    color: ${isLightTheme ? "#2e3436" : "#eeeeec"} !important;
+}
+
+.titlebar:backdrop:not(headerbar),
+headerbar:backdrop,
+window.csd > .titlebar:backdrop:not(headerbar),
+window.csd > headerbar:backdrop {
+    background-color: rgba(${accentRgb}, ${Constants.ACCENT_HOVER_OPACITY.subtle}) !important;
+    opacity: 0.9;
+}
+`;
+
+        this._templateCache.set(cacheKey, css);
+        return css;
     }
 
     /**

@@ -212,10 +212,26 @@ export const Constants = {
     /**
      * Border radius scaling factors for UI elements
      * Relative to main border-radius setting
+     * v2.5: Added Quick Settings scaling factors
      */
     BORDER_RADIUS_SCALING: {
-        panelButton: 0.6, // Panel buttons: 60% of main radius
-        popupItem: 0.5 // Popup menu items: 50% of main radius
+        panelButton: 0.8, // Panel buttons: 80% of main radius (updated from 0.6 for better proportions)
+        popupItem: 0.5, // Popup menu items: 50% of main radius
+        quickToggle: 0.8, // Quick Settings toggle buttons: 80% of main radius (matches panel buttons)
+        quickToggleArrow: 0.6, // Quick Settings arrow buttons: 60% of main radius (smaller elements)
+        listViewRow: 0.4 // List view rows: 40% of main radius (subtle, optional feature for v2.6+)
+    },
+
+    // === QUICK SETTINGS SIZING ===
+
+    /**
+     * Quick Settings toggle button height adjustment
+     * Reduces default theme height for more compact appearance (Zorin 17-style)
+     * v2.5.1: User-requested compact mode
+     */
+    QUICK_SETTINGS_HEIGHT: {
+        reduction: 6, // Reduce height by 6px total (3px top + 3px bottom padding)
+        baseHeight: 42 // Target min-height (down from theme default 48px)
     },
 
     // === ACCENT HOVER INTENSITIES ===
@@ -386,5 +402,99 @@ export const Constants = {
     UI_INDICATORS: {
         enabled: "  ✓", // Two spaces + checkmark for consistent width
         disabled: "  ✗" // Two spaces + cross for consistent width
+    },
+
+    // === WALLPAPER COLOR EXTRACTION SHADING ===
+
+    /**
+     * Shade factors for wallpaper accent color transformations
+     * Used to derive border and shadow colors from extracted accent
+     */
+    WALLPAPER_ACCENT_SHADING: {
+        border: {
+            darkTheme: 0.15, // Lighten 15% for dark themes (better visibility)
+            lightTheme: -0.1 // Darken 10% for light themes (subtle contrast)
+        },
+        shadow: {
+            darkTheme: -0.85, // 85% darker → deep shadow effect
+            lightTheme: 0.85 // 85% lighter → soft shadow effect
+        }
+    },
+
+    // === BLUR EFFECT ALPHA VALUES ===
+
+    /**
+     * Opacity values for blur effects (border, background, shadows)
+     * Theme-dependent alphas provide optimal visibility across light/dark backgrounds
+     */
+    BLUR_ALPHA: {
+        border: {
+            darkTheme: 0.6, // Lower opacity on dark backgrounds (subtle border)
+            lightTheme: 0.8 // Higher opacity on light backgrounds (visible separation)
+        },
+        background: 0.15, // Blur background glossy effect (15% opacity)
+        shadowFallback: 0.3 // Auto-detect shadow fallback alpha (30% opacity)
+    },
+
+    // === DEFAULT SHADOW COLORS ===
+
+    /**
+     * Default shadow colors for theme-aware effects
+     * Auto-detection fallback when user hasn't customized shadow color
+     */
+    DEFAULT_SHADOW_COLORS: {
+        light: "rgba(255, 255, 255, 0.7)", // Light theme shadow (70% opacity)
+        dark: "rgba(0, 0, 0, 0.7)", // Dark theme shadow (70% opacity)
+        lightFallback: "rgba(255, 255, 255, 0.3)", // Auto-detect fallback (30% opacity)
+        darkFallback: "rgba(0, 0, 0, 0.3)" // Auto-detect fallback (30% opacity)
+    },
+
+    // === AUTO-GENERATED TEXT COLORS ===
+
+    /**
+     * Text colors for auto-generated foreground on backgrounds
+     * Ensures WCAG AA contrast compliance
+     */
+    AUTO_TEXT_COLORS: {
+        lightOnDark: [250, 250, 250], // Light text RGB for dark backgrounds
+        darkOnLight: [5, 5, 5], // Dark text RGB for light backgrounds
+        lightHex: "#ffffff", // White text hex (dark themes)
+        darkHex: "#161c1f" // Dark text hex (light themes)
+    },
+
+    // === NEUTRAL STAGE COLORS ===
+
+    /**
+     * Neutral stage colors for Shell theme generation
+     * Used when no valid accent color is detected (grey/neutral themes)
+     */
+    NEUTRAL_STAGE_COLORS: {
+        light: "#2e3436", // Light theme stage color (dark grey)
+        dark: "#eeeeec" // Dark theme stage color (off-white)
+    },
+
+    // === ZORIN TASKBAR INTEGRATION LIMITS ===
+
+    /**
+     * Range limits for Zorin Taskbar GSettings synchronization
+     * Ensures values stay within Zorin's supported ranges
+     */
+    ZORIN_LIMITS: {
+        panelMargin: { min: 0, max: 20 }, // Panel margin range (pixels)
+        borderRadius: { min: 0, max: 25 }, // Border radius range (pixels)
+        borderRadiusDivider: 5 // Zorin multiplier conversion (px → 0-5 scale)
+    },
+
+    // === INITIALIZATION DEFAULTS ===
+
+    /**
+     * Default values for extension initialization
+     * Applied when settings are reset or first-time setup
+     */
+    INITIALIZATION_DEFAULTS: {
+        panelMargin: 8, // Floating panel default (0 = pinned to edge)
+        popupColorLight: "rgba(255, 255, 255, 0.9)", // White popup (90% opacity)
+        blurBackground: "rgba(0, 0, 0, 0.3)", // Black blur background (30% opacity)
+        blurBorder: "rgba(255, 255, 255, 0.15)" // White blur border (15% opacity)
     }
 };

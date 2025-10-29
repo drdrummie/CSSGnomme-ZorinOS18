@@ -1,7 +1,7 @@
 # 🚀 CSS Gnomme Quick Guide (ZorinOS 18)
 
-**Version:** v2.3-dev (GNOME 46+)
-**Last Updated:** October 22, 2025
+**Version:** v2.5.1 (GNOME 46+)
+**Last Updated:** October 29, 2025
 
 ---
 
@@ -11,9 +11,9 @@ CSS Gnomme is a powerful GNOME Shell extension that creates a **dynamic overlay 
 
 **Key Features:**
 
+- 🔄 **Dynamic theme overlay** that adapts to your background
 - 🎨 **Automatic color extraction** from your wallpaper
 - 🌫️ **Advanced blur effects** for panels and menus
-- 🔄 **Dynamic theme overlay** that adapts to your background
 - 🖥️ **Zorin OS integration** for seamless taskbar styling
 - ⚡ **Live updates** when you change settings
 
@@ -30,19 +30,23 @@ Access settings by clicking the **CSS Gnomme icon** in your system tray → **Op
 #### Theme Integration
 
 - **Enable Overlay Theme**: Master switch to activate the entire CSS Gnomme system
+
   - ✅ ON: CSS Gnomme creates overlay theme and applies your customizations
   - ❌ OFF: System reverts to your original theme (all settings preserved)
 
 - **Base Theme**: The GTK theme CSS Gnomme uses as foundation
+
   - Select from installed themes in `~/.themes/` or `/usr/share/themes/`
   - CSS Gnomme will inherit this theme's styling and apply your customizations on top
   - **Tip:** Use Fluent-based themes (ZorinBlue, ZorinPurple) for best results on Zorin OS
 
 - **Overlay Status**: Shows current state and location of generated theme files
+
   - Active: `~/.themes/CSSGnomme/` exists and is loaded
   - Inactive: Original theme is active
 
 - **Enable Zorin OS Integration**: Special enhancements for Zorin Taskbar
+
   - Syncs panel margin, border radius, and opacity with Zorin Taskbar
   - Adds floating panel styling for Fluent-based themes
   - **Recommended:** Enable if you're using Zorin OS 18
@@ -54,6 +58,7 @@ Access settings by clicking the **CSS Gnomme icon** in your system tray → **Op
 #### Automatic Color Extraction
 
 - **Auto-detect colors on wallpaper change**: Automatically extract and apply colors when you change your background
+
   - **How it works:** Monitors `~/.config/background` for changes
   - Extracts dominant colors using K-means clustering
   - Applies colors to panel, menus, and borders within 2 seconds
@@ -65,6 +70,7 @@ Access settings by clicking the **CSS Gnomme icon** in your system tray → **Op
 #### Manual Controls
 
 - **Apply Changes Now**: Force immediate update (bypasses 2-second auto-update delay)
+
   - Use when adjusting multiple settings and want instant preview
 
 - **Recreate Overlay Theme**: Rebuild entire overlay from scratch
@@ -80,31 +86,43 @@ Access settings by clicking the **CSS Gnomme icon** in your system tray → **Op
 #### Basic Transparency Controls
 
 - **Panel Opacity** (0.0 - 1.0): Taskbar/panel transparency
+
   - **0.0**: Fully transparent (invisible panel)
   - **0.5**: Half transparent (balanced)
   - **1.0**: Fully opaque (solid panel)
   - **Recommended:** 0.7-0.9 for subtle transparency
 
 - **Menu Opacity** (0.0 - 1.0): Popup menu transparency
+
   - Controls application menus, system menus, and dropdown panels
   - **Tip:** Keep this higher than panel (0.85-0.95) for readability
 
+- **Zorin Theme Tint Strength** (0 - 100%): Adjust Zorin theme color tint intensity
+  - **0%**: Fully neutral grey backgrounds (no color tint)
+  - **100%**: Original colored backgrounds (Zorin theme default)
+  - Only affects Zorin themes (ZorinBlue, ZorinGreen, ZorinPurple, etc.)
+  - Other themes unaffected (Fluent, Arc, Graphite remain unchanged)
+
 #### Panel Appearance
 
-- **Panel Margin** (0 - 32px): Horizontal spacing from screen edges
+- **Panel Margin** (0 - 32px): Horizontal spacing from screen edges (Floating mode)
+
   - **0px**: Pinned to edges (traditional panel)
   - **4-16px**: Floating panel with modern appearance (Zorin style)
   - **Syncs with Zorin Taskbar** when integration is enabled
 
 - **Override panel color**: Use custom color instead of extracted wallpaper color
+
   - Enable to manually choose panel background color
   - Useful if extracted color doesn't match your preference
 
 - **Choose override panel color**: RGBA color picker
+
   - Full control over panel background (supports transparency via alpha channel)
   - Only active when "Override panel color" is enabled
 
 - **Override popup color**: Separate color override for menus/popups
+
   - Recommended to keep similar to panel color for consistency
 
 - **Choose override popup color**: RGBA picker for menu backgrounds
@@ -115,10 +133,6 @@ Access settings by clicking the **CSS Gnomme icon** in your system tray → **Op
   - **15-25px**: Heavily rounded (macOS-style)
   - **Step:** 1px for precise control
 
-- **Apply border radius to main panel**: Control whether panel itself gets rounded
-  - ✅ ON: Panel has rounded corners (looks best with Panel Margin > 0)
-  - ❌ OFF: Only menus/popups are rounded (recommended for Panel Margin = 0)
-
 ---
 
 ### 🌫️ Page 3: Blur Effects
@@ -128,43 +142,51 @@ Access settings by clicking the **CSS Gnomme icon** in your system tray → **Op
 #### Custom Blur Settings
 
 - **Blur radius** (1 - 50px): Intensity of blur effect
+
   - **10-20px**: Subtle, elegant blur
   - **30-40px**: Noticeable frosted glass effect
   - **Higher values:** More diffused, fog-like appearance
 
 - **Saturation multiplier** (0.4 - 2.0): Color vibrancy in blurred background
+
   - **< 1.0**: Desaturated, muted colors
   - **1.0**: Natural colors
   - **> 1.0**: Enhanced, vivid colors
   - **Recommended:** 1.1-1.3 for vibrant frosted glass
 
 - **Contrast multiplier** (0.4 - 2.0): Difference between light/dark areas
+
   - **< 1.0**: Softer, low-contrast blur
   - **1.0**: Natural contrast
   - **> 1.0**: Sharp, high-contrast edges
   - **Recommended:** 0.9-1.1 for natural appearance
 
 - **Brightness multiplier** (0.4 - 2.0): Overall lightness of blur effect
+
   - **< 1.0**: Darker, dimmed background
   - **1.0**: Natural brightness
   - **> 1.0**: Brighter, illuminated effect
   - **Tip:** Use 1.1-1.3 for light themes, 0.8-0.9 for dark themes
 
 - **Background color/tint**: Semi-transparent overlay color applied over blur
+
   - Automatically set to neutral white (light themes) or black (dark themes)
   - Customize for unique glass effects (e.g., blue tint for cool tones)
   - **Format:** RGBA (supports alpha channel)
 
 - **Border color**: Color of subtle border framing blurred elements
+
   - Automatically extracted from wallpaper accent color
   - Provides definition and polish to blur effect
 
 - **Border width** (0 - 5px): Thickness of border
-  - **0px**: No border (strong box shadow also used as "styling mode" switch)
+
+  - **0px**: No border (minimalist)
   - **1-2px**: Subtle definition (recommended)
   - **3-5px**: Prominent frame
 
 - **Blur opacity** (0.0 - 1.0): Transparency of entire blur layer
+
   - **0.0**: Blur disabled (no effect)
   - **0.3-0.6**: Light, ethereal appearance
   - **0.8-1.0**: Prominent, solid glass effect
@@ -174,12 +196,13 @@ Access settings by clicking the **CSS Gnomme icon** in your system tray → **Op
   - **0.5-0.8s**: Balanced, smooth fades
   - **1.0-2.0s**: Slow, elegant animations
 
-#### Shadow Effects
+#### Shadow Effects (only when border-width is set to 0)
 
-- **Shadow strength** (0.0 - 0.8): Intensity of drop shadow
+- **Shadow strength** (0.0 - 1.0): Intensity of drop shadow
+
   - **0.0**: No shadow
   - **0.3-0.5**: Subtle depth
-  - **0.8**: Strong, dramatic shadow
+  - **0.8-1.0**: Strong, dramatic shadow
   - Adds depth perception to panels and menus
 
 - **Shadow color**: Color of drop shadow
@@ -205,11 +228,9 @@ Access settings by clicking the **CSS Gnomme icon** in your system tray → **Op
   - Example: ZorinPurple-Light ↔ ZorinPurple-Dark
   - **Note:** Dropdown will only show matching variants (Light OR Dark, not both)
 
-#### Full Auto Mode
+#### Full Auto Mode (Experimental)
 
-- **Full Auto Mode**: Enable all automation features at once
-  - Activates: Auto color extraction + Auto theme switching
-  - **Recommended:** Turn on for "set it and forget it" experience
+- **Full Auto Mode**: Uses Wallpaper color extraction to style most of the shell elements
 
 #### Debugging
 
@@ -225,7 +246,6 @@ Access settings by clicking the **CSS Gnomme icon** in your system tray → **Op
 **Project information, version, and How It Works explanation.**
 
 - **Version**: Current extension version
-- **Links**: GitHub repository, issue tracker, documentation
 - **How It Works**: Detailed explanation of overlay system, color extraction, and CSS generation
 
 ---
@@ -235,15 +255,17 @@ Access settings by clicking the **CSS Gnomme icon** in your system tray → **Op
 ### Minimal Setup (5 minutes)
 
 1. **Page 1 (Theme Overlay)**:
-   - ✅ Enable **Enable Overlay Theme**
-   - ✅ Enable **Enable Zorin OS Integration** (if on Zorin OS)
-   - ✅ Enable **Auto-detect colors on wallpaper change**
-   - Select your preferred **Base Theme**
+
+    - ✅ Enable **Enable Overlay Theme**
+    - ✅ Enable **Enable Zorin OS Integration** (if on Zorin OS)
+    - ✅ Enable **Auto-detect colors on wallpaper change**
+    - Select your preferred **Base Theme**
 
 2. **Page 2 (Color Settings)**:
-   - Adjust **Panel Opacity** (try 0.85)
-   - Set **Panel Margin** (try 8px for floating effect)
-   - Adjust **Border Radius** (try 12px)
+
+    - Adjust **Panel Opacity** (try 0.85)
+    - Set **Panel Margin** (try 8px for floating effect)
+    - Adjust **Border Radius** (try 12px)
 
 3. **Done!** Colors will auto-extract from wallpaper.
 
@@ -251,49 +273,14 @@ Access settings by clicking the **CSS Gnomme icon** in your system tray → **Op
 
 1. Follow Minimal Setup above
 2. **Page 3 (Blur Effects)**:
-   - Set **Blur radius** (try 30px)
-   - Adjust **Saturation** (try 1.2)
-   - Fine-tune **Blur opacity** (try 0.8)
+    - Set **Blur radius** (try 30px)
+    - Adjust **Saturation** (try 1.2)
+    - Fine-tune **Blur opacity** (try 0.8)
 3. **Page 2** (return here):
-   - Experiment with **Override panel color** if needed
+    - Experiment with **Override panel color** if needed
 4. **Test**: Change wallpaper and watch auto-extraction work!
 
 ---
-
-## 💡 Pro Tips
-
-### Best Blur Settings
-
-For **frosted glass effect** (macOS-style):
-
-- Blur radius: 30-35px
-- Saturation: 1.2-1.3
-- Contrast: 0.9-1.0
-- Brightness: 1.1 (light themes) / 0.9 (dark themes)
-- Blur opacity: 0.8-0.9
-
-For **subtle transparency** (Windows 11-style):
-
-- Blur radius: 15-20px
-- Saturation: 1.0-1.1
-- Contrast: 1.0
-- Brightness: 1.0
-- Blur opacity: 0.6-0.7
-
-### Floating Panel Tips
-
-- Set **Panel Margin** to 8-12px
-- Enable **Apply border radius to main panel**
-- Set **Border Radius** to 12-15px
-- Adjust **Panel Opacity** to 0.8-0.9
-- Result: Modern floating taskbar (Zorin/macOS style)
-
-### Color Extraction Tips
-
-- **Too dark?** Increase **Brightness multiplier** (Blur Effects page)
-- **Too colorful?** Lower **Saturation multiplier**
-- **Wrong colors?** Click **Extract Colors Now** to re-analyze wallpaper
-- **Manual override?** Disable auto-extraction, use **Override panel color**
 
 ### Performance Tips
 
@@ -304,6 +291,23 @@ For **subtle transparency** (Windows 11-style):
 ---
 
 ## 🐛 Troubleshooting
+
+### Overlay looks broken or messed up
+
+**Symptom:** Theme appears corrupted, colors wrong, or UI elements broken
+
+**Solution (Full Reset):**
+
+1. **Disable Overlay**: Open CSS Gnomme settings → Turn OFF "Enable Overlay Theme"
+2. **Choose Base Theme**: Go to Zorin Appearance settings → Select the theme you want
+3. **Select in Extension**: Open CSS Gnomme settings → Choose same theme in "Base Theme" dropdown
+4. **Enable Overlay**: Turn ON "Enable Overlay Theme"
+5. **Recreate**: Click "Recreate Overlay Theme" button
+
+**Quick Fix (if above doesn't help):**
+
+- Try **Enable/Disable toggle** several times (sometimes one cycle is enough)
+- Or use **Apply Changes Now** button to force refresh
 
 ### Colors not extracting
 
@@ -351,7 +355,7 @@ For **subtle transparency** (Windows 11-style):
 
 - **GitHub Repository**: [github.com/drdrummie/CSSGnomme-ZorinOS18](https://github.com/drdrummie/CSSGnomme-ZorinOS18)
 - **Issue Tracker**: Report bugs or request features
-- **Full Documentation**: See `README.md` for technical details
+- **Full Documentation**: See README.md for technical details
 
 ---
 

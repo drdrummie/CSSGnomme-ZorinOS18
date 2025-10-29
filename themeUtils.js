@@ -98,9 +98,9 @@ export class ThemeUtils {
         const isDark = this.getBgDark(r, g, b);
 
         if (isDark) {
-            return [250, 250, 250, alpha]; // Light text on dark bg
+            return [...Constants.AUTO_TEXT_COLORS.lightOnDark, alpha]; // Light text on dark bg
         } else {
-            return [5, 5, 5, alpha]; // Dark text on light bg
+            return [...Constants.AUTO_TEXT_COLORS.darkOnLight, alpha]; // Dark text on light bg
         }
     }
 
@@ -108,20 +108,18 @@ export class ThemeUtils {
      * Generate auto highlight/hover color
      */
     static getAutoHighlightColor(bgColor, intensity = null) {
-        // Use constant default if not provided
-        if (intensity === null) {
-            intensity = Constants.AUTO_HIGHLIGHT_INTENSITY;
-        }
+        // Use intensity from settings if provided, otherwise use constant
+        const effectiveIntensity = intensity !== null ? intensity : Constants.AUTO_HIGHLIGHT_INTENSITY;
 
         const [r, g, b] = bgColor.map(c => parseInt(c));
         const isDark = this.getBgDark(r, g, b);
 
         if (isDark) {
             // Lighten dark backgrounds
-            return this.colorShade([r, g, b], intensity);
+            return this.colorShade([r, g, b], effectiveIntensity);
         } else {
             // Darken light backgrounds
-            return this.colorShade([r, g, b], -intensity);
+            return this.colorShade([r, g, b], -effectiveIntensity);
         }
     }
 
@@ -488,5 +486,534 @@ export class ThemeUtils {
         }
 
         return palette;
+    }
+
+    // ===== THEME TINT DETECTION & NEUTRALIZATION =====
+
+    /**
+     * Detect if background color has color tint (not neutral grey)
+     * Analyzes RGB channels to determine if color deviates from neutral grey
+     * @param {number|Array} r - Red (0-255) or [r,g,b] array
+     * @param {number} g - Green (0-255)
+     * @param {number} b - Blue (0-255)
+     * @param {number} threshold - Max deviation for "neutral" (default 5)
+     * @returns {Object} {isTinted, channel, strength, description}
+     */
+    static detectBackgroundTint(r, g, b, threshold = 5) {
+        // Handle array input
+        if (Array.isArray(r)) {
+            [r, g, b] = r.map(c => parseInt(c));
+        } else {
+            r = parseInt(r);
+            g = parseInt(g);
+            b = parseInt(b);
+        }
+
+        // Check if R=G=B (neutral grey) within threshold
+        const maxDiff = Math.max(Math.abs(r - g), Math.abs(g - b), Math.abs(r - b));
+
+        if (maxDiff <= threshold) {
+            return {
+                isTinted: false,
+                channel: "NONE",
+                strength: 0,
+                rgb: [r, g, b],
+                description: "Neutral grey background"
+            };
+        }
+
+        // Determine dominant channel and tint type
+        const max = Math.max(r, g, b);
+        const min = Math.min(r, g, b);
+        const strength = Math.round(((max - min) / 255) * 100);
+
+        let channel = "UNKNOWN";
+        let colorName = "Unknown";
+
+        // Determine tint color based on channel relationships
+        if (r === max && g === max) {
+            channel = "RG";
+            colorName = "Yellow";
+        } else if (r === max && b === max) {
+            channel = "RB";
+            colorName = "Magenta";
+        } else if (g === max && b === max) {
+            channel = "GB";
+            colorName = "Cyan";
+        } else if (r === max && g > b) {
+            channel = "R";
+            colorName = g > r - (r - b) / 2 ? "Orange" : "Red";
+        } else if (r === max) {
+            channel = "R";
+            colorName = "Purple-Red";
+        } else if (g === max && b > r) {
+            channel = "G";
+            colorName = b > g - (g - r) / 2 ? "Teal" : "Green";
+        } else if (g === max) {
+            channel = "G";
+            colorName = "Yellow-Green";
+        } else if (b === max && r > g) {
+            channel = "B";
+            colorName = r > b - (b - g) / 2 ? "Purple" : "Blue";
+        } else if (b === max) {
+            channel = "B";
+            colorName = "Cyan-Blue";
+        }
+
+        return {
+            isTinted: true,
+            channel,
+            colorName,
+            strength,
+            rgb: [r, g, b],
+            description: `${colorName} tint (${strength}% strength, max diff: ${maxDiff})`
+        };
+    }
+
+    /**
+     * Neutralize tinted background to pure grey
+     * Converts colored background to neutral grey while preserving perceived brightness
+     * @param {number|Array} r - Red (0-255) or [r,g,b] array
+     * @param {number} g - Green (0-255)
+     * @param {number} b - Blue (0-255)
+     * @returns {Array} [r, g, b] neutralized grey
+     */
+    static neutralizeTint(r, g, b) {
+        // Handle array input
+        if (Array.isArray(r)) {
+            [r, g, b] = r.map(c => parseInt(c));
+        } else {
+            r = parseInt(r);
+            g = parseInt(g);
+            b = parseInt(b);
+        }
+
+        // Use perceived brightness (HSP) to maintain luminance
+        // This ensures neutralized color has same brightness as original
+        const hsp = this.getHSP(r, g, b);
+        const neutral = Math.round(hsp);
+
+        // Clamp to valid range
+        const clampedNeutral = Math.max(0, Math.min(255, neutral));
+
+        return [clampedNeutral, clampedNeutral, clampedNeutral];
+    }
+
+    /**
+     * Blend color towards neutral grey by percentage
+     * Useful for reducing tint strength without complete removal
+     * @param {number|Array} r - Red (0-255) or [r,g,b] array
+     * @param {number} g - Green (0-255)
+     * @param {number} b - Blue (0-255)
+     * @param {number} blendPercent - Blend percentage (0-100, where 100 = fully neutral)
+     * @returns {Array} [r, g, b] blended color
+     */
+    static blendToNeutral(r, g, b, blendPercent) {
+        // Handle array input
+        if (Array.isArray(r)) {
+            [r, g, b] = r.map(c => parseInt(c));
+            blendPercent = g; // Second parameter becomes blend percent
+        } else {
+            r = parseInt(r);
+            g = parseInt(g);
+            b = parseInt(b);
+        }
+
+        // Clamp blend percentage
+        blendPercent = Math.max(0, Math.min(100, blendPercent));
+
+        // Get neutral target
+        const [neutralR, neutralG, neutralB] = this.neutralizeTint(r, g, b);
+
+        // Blend factor (0.0 = original, 1.0 = fully neutral)
+        const factor = blendPercent / 100;
+
+        // Linear interpolation between original and neutral
+        const blendedR = Math.round(r + (neutralR - r) * factor);
+        const blendedG = Math.round(g + (neutralG - g) * factor);
+        const blendedB = Math.round(b + (neutralB - b) * factor);
+
+        return [blendedR, blendedG, blendedB];
+    }
+
+    // ===== ACCENT COLOR VALIDATION & TRANSFORMATION =====
+
+    /**
+     * Validate if RGB color is a valid accent color
+     * Rejects grey/white/black colors based on saturation and lightness
+     * @param {number} r - Red channel (0-255)
+     * @param {number} g - Green channel (0-255)
+     * @param {number} b - Blue channel (0-255)
+     * @returns {Object} {isValid: boolean, reason: string}
+     */
+    static isValidAccent(r, g, b) {
+        // Convert to HSL for proper color analysis
+        const hsl = this.rgbToHsl(r, g, b);
+        const h = hsl[0]; // Hue (0-360)
+        const s = hsl[1]; // Saturation (0-100)
+        const l = hsl[2]; // Lightness (0-100)
+
+        // Rule 1: Reject colors with very low saturation (grey/white detection)
+        if (s < 15) {
+            return {
+                isValid: false,
+                reason: `Too desaturated (S:${s.toFixed(1)}% < 15%) - likely grey/white`
+            };
+        }
+
+        // Rule 2: Reject very dark or very light colors (black/white detection)
+        if (l < 25) {
+            return {
+                isValid: false,
+                reason: `Too dark (L:${l.toFixed(1)}% < 25%) - likely black`
+            };
+        }
+        if (l > 90) {
+            return {
+                isValid: false,
+                reason: `Too light (L:${l.toFixed(1)}% > 90%) - likely white`
+            };
+        }
+
+        // Rule 3: Prefer colors with good saturation (quality accent)
+        if (s < 30) {
+            return {
+                isValid: true, // Accept but warn
+                reason: `Low saturation (S:${s.toFixed(1)}% < 30%) - weak accent`
+            };
+        }
+
+        // Valid accent color
+        return {
+            isValid: true,
+            reason: `Valid accent (H:${h.toFixed(0)}° S:${s.toFixed(1)}% L:${l.toFixed(1)}%)`
+        };
+    }
+
+    /**
+     * Transform pastel accent colors into vibrant versions
+     * Targets Zorin Dark theme accent colors (L:80-86%, S:40-50%)
+     * Transforms to L:50-65% with +10% saturation boost
+     * @param {number} r - Red channel (0-255)
+     * @param {number} g - Green channel (0-255)
+     * @param {number} b - Blue channel (0-255)
+     * @returns {Object} {rgb: [r, g, b], transformed: boolean, before: string, after: string}
+     */
+    static depastelizeAccent(r, g, b) {
+        const hsl = this.rgbToHsl(r, g, b);
+        const h = hsl[0];
+        const s = hsl[1];
+        const l = hsl[2];
+
+        // Only transform if lightness > 75% (pastel threshold)
+        if (l <= 75) {
+            return {
+                rgb: [r, g, b],
+                transformed: false,
+                before: `H:${h.toFixed(0)}° S:${s.toFixed(1)}% L:${l.toFixed(1)}%`,
+                after: "No transformation needed"
+            };
+        }
+
+        // Transform: L:75-100% → L:50-65%, S+10%
+        const targetL = 50 + ((l - 75) / 25) * 15; // Map 75-100% → 50-65%
+        const targetS = Math.min(100, s + 10); // Boost saturation by 10%
+
+        const newRgb = this.hslToRgb(h, targetS, targetL);
+
+        return {
+            rgb: newRgb,
+            transformed: true,
+            before: `H:${h.toFixed(0)}° S:${s.toFixed(1)}% L:${l.toFixed(1)}%`,
+            after: `H:${h.toFixed(0)}° S:${targetS.toFixed(1)}% L:${targetL.toFixed(1)}%`
+        };
+    }
+
+    /**
+     * Check if color is neutral/grey (low saturation)
+     * Convenience wrapper around isValidAccent() for grey detection
+     * @param {number} r - Red channel (0-255)
+     * @param {number} g - Green channel (0-255)
+     * @param {number} b - Blue channel (0-255)
+     * @param {number} saturationThreshold - Saturation threshold (default 15%)
+     * @returns {boolean} True if color is neutral/grey (S < threshold)
+     */
+    static isNeutralColor(r, g, b, saturationThreshold = 15) {
+        const hsl = this.rgbToHsl(r, g, b);
+        return hsl[1] < saturationThreshold; // S < 15% = grey/neutral
+    }
+
+    // ===== GTK TINT DETECTION & PROCESSING =====
+
+    /**
+     * Detect GTK foreground and background tint colors from CSS
+     * Supports both GTK3 (.background selector) and GTK4 (@define-color) patterns
+     * @param {string} css - CSS content to parse
+     * @param {boolean} isZorinTheme - Whether theme is Zorin variant
+     * @returns {Object} {fgHex, fgRgb, bgHex, bgRgb} or nulls if not found
+     */
+    static detectGtkTintColors(css, isZorinTheme) {
+        if (!isZorinTheme) {
+            return { fgHex: null, fgRgb: null, bgHex: null, bgRgb: null };
+        }
+
+        let tintFgHex = null;
+        let tintFgRgb = null;
+        let tintBgHex = null;
+        let tintBgRgb = null;
+
+        // === FOREGROUND TINT DETECTION ===
+        // Try GTK3 pattern first (.background { color: #hex; })
+        const backgroundColorMatch = css.match(/\.background\s*\{\s*color:\s*(#[0-9a-fA-F]{6})/);
+
+        if (backgroundColorMatch) {
+            tintFgHex = backgroundColorMatch[1].toLowerCase();
+        } else {
+            // Fallback to GTK4 pattern (@define-color window_fg_color #hex;)
+            const defineColorMatch = css.match(/@define-color\s+window_fg_color\s+(#[0-9a-fA-F]{6})/);
+            if (defineColorMatch) {
+                tintFgHex = defineColorMatch[1].toLowerCase();
+            }
+        }
+
+        if (tintFgHex) {
+            // Parse RGB from hex
+            const r = parseInt(tintFgHex.slice(1, 3), 16);
+            const g = parseInt(tintFgHex.slice(3, 5), 16);
+            const b = parseInt(tintFgHex.slice(5, 7), 16);
+            tintFgRgb = [r, g, b];
+        }
+
+        // === BACKGROUND TINT DETECTION ===
+        // GTK3: .background { ... background-color: #hex; }
+        const backgroundBgColorMatch = css.match(/\.background\s*\{[^}]*background-color:\s*(#[0-9a-fA-F]{6})/);
+
+        if (backgroundBgColorMatch) {
+            tintBgHex = backgroundBgColorMatch[1].toLowerCase();
+        } else {
+            // GTK4: @define-color window_bg_color #hex;
+            const defineBgColorMatch = css.match(/@define-color\s+window_bg_color\s+(#[0-9a-fA-F]{6})/);
+            if (defineBgColorMatch) {
+                tintBgHex = defineBgColorMatch[1].toLowerCase();
+            }
+        }
+
+        if (tintBgHex) {
+            // Parse RGB from hex
+            const r = parseInt(tintBgHex.slice(1, 3), 16);
+            const g = parseInt(tintBgHex.slice(3, 5), 16);
+            const b = parseInt(tintBgHex.slice(5, 7), 16);
+            tintBgRgb = [r, g, b];
+        }
+
+        return { fgHex: tintFgHex, fgRgb: tintFgRgb, bgHex: tintBgHex, bgRgb: tintBgRgb };
+    }
+
+    /**
+     * Calculate adaptive tint threshold based on reference color tint strength
+     * Uses 8% of reference tint strength (proportional to variant)
+     * Minimum threshold = 2 (catches subtle tints like ZorinPurple view_bg_color)
+     * @param {Array} referenceRgb - [r, g, b] reference color (foreground or background)
+     * @returns {number} Adaptive threshold (minimum 2)
+     */
+    static calculateAdaptiveThreshold(referenceRgb) {
+        const [r, g, b] = referenceRgb;
+        const maxChannel = Math.max(r, g, b);
+        const minChannel = Math.min(r, g, b);
+        const tintStrength = maxChannel - minChannel;
+
+        // 8% of tint strength, minimum 2
+        return Math.max(2, Math.floor(tintStrength * 0.08));
+    }
+
+    /**
+     * Determine dominant tint channel from RGB color
+     * Returns which color channel has strongest deviation from neutral
+     * @param {Array} rgb - [r, g, b] color to analyze
+     * @param {number} threshold - Minimum difference to consider channel dominant
+     * @returns {string|null} 'r', 'g', 'b', or null if no dominant channel
+     */
+    static determineDominantChannel(rgb, threshold) {
+        const [r, g, b] = rgb;
+
+        if (r > g + threshold && r > b + threshold) {
+            return "r"; // Red tint (ZorinRed, ZorinOrange)
+        } else if (g > r + threshold && g > b + threshold) {
+            return "g"; // Green tint (ZorinGreen)
+        } else if (b > r + threshold && b > g + threshold) {
+            return "b"; // Blue tint (ZorinBlue, ZorinPurple)
+        }
+
+        return null; // No dominant channel
+    }
+
+    /**
+     * Neutralize tinted colors in CSS with context-aware whitelist
+     * Replaces tinted background colors while preserving intentional accents
+     * @param {string} css - CSS content to process
+     * @param {Object} options - Processing options
+     * @param {string} options.dominantChannel - 'r', 'g', or 'b'
+     * @param {number} options.threshold - Tint detection threshold
+     * @param {number} options.tintStrength - Blend strength (0-100%)
+     * @param {Function} options.blendFunction - Tint blending function (tintRgb, neutralRgb, strength) => [r,g,b]
+     * @returns {Object} {css: string, replacementCount: number}
+     */
+    static neutralizeTintedCss(css, options) {
+        const { dominantChannel, threshold, tintStrength, blendFunction } = options;
+
+        if (!dominantChannel) {
+            return { css, replacementCount: 0 };
+        }
+
+        let replacementCount = 0;
+
+        // === WHITELIST: CSS selectors that should PRESERVE their colors ===
+        const colorPreserveSelectors = [
+            "button.destructive",
+            "button.destructive-action",
+            ".destructive-action",
+            ".error",
+            ".warning",
+            ".critical",
+            "button.suggested-action",
+            ".suggested-action",
+            "levelbar.discrete",
+            "progressbar"
+        ];
+
+        // === CSS BLOCK PARSER: Parse CSS into selector → properties map ===
+        const cssBlocks = [];
+        const blockRegex = /([^{}]+)\s*\{([^{}]*)\}/g;
+        let blockMatch;
+
+        while ((blockMatch = blockRegex.exec(css)) !== null) {
+            const selector = blockMatch[1].trim();
+            const properties = blockMatch[2];
+            const fullBlock = blockMatch[0];
+            const startIndex = blockMatch.index;
+
+            // Check if this selector should preserve colors (whitelist check)
+            const shouldPreserve = colorPreserveSelectors.some(preserveSelector => selector.includes(preserveSelector));
+
+            cssBlocks.push({
+                selector,
+                properties,
+                fullBlock,
+                startIndex,
+                shouldPreserve
+            });
+        }
+
+        // === BUILD SKIP RANGES (whitelisted blocks) ===
+        const skipRanges = cssBlocks
+            .filter(block => block.shouldPreserve)
+            .map(block => ({
+                start: block.startIndex,
+                end: block.startIndex + block.fullBlock.length
+            }));
+
+        // Helper: Check if a match index is within a skip range
+        const shouldSkipIndex = index => {
+            return skipRanges.some(range => index >= range.start && index < range.end);
+        };
+
+        // === STEP 1: Replace tinted hex colors in background properties ===
+        css = css.replace(/(background(?:-color|-image)?)\s*:\s*([^;{}]+);/gi, (fullMatch, property, value, offset) => {
+            // Skip if this match is within a whitelisted selector block
+            if (shouldSkipIndex(offset)) {
+                return fullMatch; // Preserve original
+            }
+
+            let modifiedValue = value;
+
+            // Replace hex colors
+            modifiedValue = modifiedValue.replace(/#([0-9a-fA-F]{6})\b/gi, (match, hexValue) => {
+                const r = parseInt(hexValue.slice(0, 2), 16);
+                const g = parseInt(hexValue.slice(2, 4), 16);
+                const b = parseInt(hexValue.slice(4, 6), 16);
+
+                // Check if this color has dominant channel tint
+                const hasTint =
+                    (dominantChannel === "r" && r > g + threshold && r > b + threshold) ||
+                    (dominantChannel === "g" && g > r + threshold && g > b + threshold) ||
+                    (dominantChannel === "b" && b > r + threshold && b > g + threshold);
+
+                if (!hasTint) {
+                    return match; // Not tinted, keep original
+                }
+
+                // Neutralize tint using provided blend function
+                const originalRgb = [r, g, b];
+                const avgBrightness = (r + g + b) / 3;
+                const neutralBase = [avgBrightness, avgBrightness, avgBrightness];
+                const neutralizedRgb = blendFunction(originalRgb, neutralBase, tintStrength);
+                const neutralizedHex =
+                    "#" + neutralizedRgb.map(c => Math.round(c).toString(16).padStart(2, "0")).join("");
+
+                replacementCount++;
+                return neutralizedHex;
+            });
+
+            // Replace rgba colors
+            modifiedValue = modifiedValue.replace(
+                /rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+))?\s*\)/gi,
+                (match, rStr, gStr, bStr, alphaStr) => {
+                    const r = parseInt(rStr);
+                    const g = parseInt(gStr);
+                    const b = parseInt(bStr);
+                    const alpha = alphaStr || "1";
+
+                    // Check if this color has dominant channel tint
+                    const hasTint =
+                        (dominantChannel === "r" && r > g + threshold && r > b + threshold) ||
+                        (dominantChannel === "g" && g > r + threshold && g > b + threshold) ||
+                        (dominantChannel === "b" && b > r + threshold && b > g + threshold);
+
+                    if (!hasTint) {
+                        return match; // Not tinted, keep original
+                    }
+
+                    // Neutralize tint using provided blend function
+                    const originalRgb = [r, g, b];
+                    const avgBrightness = (r + g + b) / 3;
+                    const neutralBase = [avgBrightness, avgBrightness, avgBrightness];
+                    const neutralizedRgb = blendFunction(originalRgb, neutralBase, tintStrength);
+
+                    replacementCount++;
+                    return `rgba(${neutralizedRgb[0]}, ${neutralizedRgb[1]}, ${neutralizedRgb[2]}, ${alpha})`;
+                }
+            );
+
+            return `${property}: ${modifiedValue};`;
+        });
+
+        // === STEP 2: Neutralize @define-color variables with tinted colors ===
+        css = css.replace(/(@define-color\s+[\w_-]+\s+)#([0-9a-fA-F]{6})\b/gi, (fullMatch, prefix, hexValue) => {
+            const r = parseInt(hexValue.slice(0, 2), 16);
+            const g = parseInt(hexValue.slice(2, 4), 16);
+            const b = parseInt(hexValue.slice(4, 6), 16);
+
+            // Check if this color has dominant channel tint
+            const hasTint =
+                (dominantChannel === "r" && r > g + threshold && r > b + threshold) ||
+                (dominantChannel === "g" && g > r + threshold && g > b + threshold) ||
+                (dominantChannel === "b" && b > r + threshold && b > g + threshold);
+
+            if (!hasTint) {
+                return fullMatch; // Not tinted, keep original
+            }
+
+            // Neutralize tint using provided blend function
+            const originalRgb = [r, g, b];
+            const avgBrightness = (r + g + b) / 3;
+            const neutralBase = [avgBrightness, avgBrightness, avgBrightness];
+            const neutralizedRgb = blendFunction(originalRgb, neutralBase, tintStrength);
+            const neutralizedHex = "#" + neutralizedRgb.map(c => Math.round(c).toString(16).padStart(2, "0")).join("");
+
+            replacementCount++;
+            return prefix + neutralizedHex;
+        });
+
+        return { css, replacementCount, whitelistedBlocks: cssBlocks.filter(b => b.shouldPreserve).length };
     }
 }

@@ -621,7 +621,7 @@ export class ColorPalette {
             // NOTE: override-popup-color is NOT auto-enabled - user must enable manually
 
             // Get panel opacity for proper alpha
-            const panelOpacity = settings.get_double("panel-opacity") || 0.6;
+            const panelOpacity = settings.get_double("panel-opacity") || Constants.DEFAULT_OPACITY.panel;
             const menuOpacity = settings.get_double("menu-opacity") || 0.8;
 
             // Apply background color to panel
@@ -641,14 +641,16 @@ export class ColorPalette {
             this._logger.info(`Theme detected: ${isDarkTheme ? "DARK" : "LIGHT"}`);
 
             // Calculate border shade for background tint consistency
-            const borderAccent = isDarkTheme
-                ? ThemeUtils.colorShade(accentColor, 0.15) // Lighten 15% for dark themes
-                : ThemeUtils.colorShade(accentColor, -0.1); // Darken 10% for light themes
+            const borderShade = isDarkTheme
+                ? Constants.WALLPAPER_ACCENT_SHADING.border.darkTheme
+                : Constants.WALLPAPER_ACCENT_SHADING.border.lightTheme;
+            const borderAccent = ThemeUtils.colorShade(accentColor, borderShade);
 
             // Calculate shadow variant
-            const shadowVariant = isDarkTheme
-                ? ThemeUtils.colorShade(accentColor, -0.85) // 85% darker → deep shadow
-                : ThemeUtils.colorShade(accentColor, 0.85); // 85% lighter → soft shadow
+            const shadowShade = isDarkTheme
+                ? Constants.WALLPAPER_ACCENT_SHADING.shadow.darkTheme
+                : Constants.WALLPAPER_ACCENT_SHADING.shadow.lightTheme;
+            const shadowVariant = ThemeUtils.colorShade(accentColor, shadowShade);
 
             // === FULL AUTO MODE - Wallpaper extraction controls blur effects ===
             const fullAutoMode = settings.get_boolean("full-auto-mode") || false;
@@ -658,12 +660,14 @@ export class ColorPalette {
                 this._logger.info(`FULL AUTO MODE: Applying wallpaper colors to blur effects`);
 
                 // blur-border-color: Use accent color with theme-appropriate alpha
-                const borderAlpha = isDarkTheme ? 0.6 : 0.8;
+                const borderAlpha = isDarkTheme
+                    ? Constants.BLUR_ALPHA.border.darkTheme
+                    : Constants.BLUR_ALPHA.border.lightTheme;
                 const blurBorderColor = ThemeUtils.rgbaToCss(...accentColor, borderAlpha);
                 settings.set_string("blur-border-color", blurBorderColor);
 
                 // blur-background: Use lighter/darker variant for glossy effect
-                const blurBackground = ThemeUtils.rgbaToCss(...borderAccent, 0.15);
+                const blurBackground = ThemeUtils.rgbaToCss(...borderAccent, Constants.BLUR_ALPHA.background);
                 settings.set_string("blur-background", blurBackground);
 
                 // shadow-color: Use deep/soft shadow variant

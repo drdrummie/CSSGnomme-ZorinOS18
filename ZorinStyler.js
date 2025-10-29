@@ -13,6 +13,7 @@ import Meta from "gi://Meta";
 import St from "gi://St";
 
 import * as Main from "resource:///org/gnome/shell/ui/main.js";
+import { Constants } from "./constants.js";
 import { GlobalSignalsHandler } from "./signalHandler.js";
 
 /**
@@ -118,7 +119,10 @@ export const ZorinStyler = GObject.registerClass(
 
             try {
                 // Clamp to safe range
-                const clampedMargin = Math.max(0, Math.min(20, margin));
+                const clampedMargin = Math.max(
+                    Constants.ZORIN_LIMITS.panelMargin.min,
+                    Math.min(Constants.ZORIN_LIMITS.panelMargin.max, margin)
+                );
 
                 this._zorinSettings.set_int("panel-margin", clampedMargin);
                 this._logger.debug(`Panel margin synced to Zorin: ${clampedMargin}px`);
@@ -140,11 +144,14 @@ export const ZorinStyler = GObject.registerClass(
 
             try {
                 // Clamp to CSSGnomme range (0-25 px)
-                const clampedRadius = Math.max(0, Math.min(25, radius));
+                const clampedRadius = Math.max(
+                    Constants.ZORIN_LIMITS.borderRadius.min,
+                    Math.min(Constants.ZORIN_LIMITS.borderRadius.max, radius)
+                );
 
                 // Zorin Taskbar uses multiplier (0-5), not pixels
                 // globalBorderRadius * 5 = CSS class (br5, br10, br15, br20, br25)
-                const zorinValue = Math.round(clampedRadius / 5);
+                const zorinValue = Math.round(clampedRadius / Constants.ZORIN_LIMITS.borderRadiusDivider);
 
                 this._zorinSettings.set_int("global-border-radius", zorinValue);
                 this._logger.debug(`Border radius synced to Zorin: ${clampedRadius}px (Zorin value: ${zorinValue})`);

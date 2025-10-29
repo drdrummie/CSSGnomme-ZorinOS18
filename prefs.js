@@ -577,6 +577,28 @@ export default class CSSGnommePreferences extends ExtensionPreferences {
         menuOpacityRow.add_suffix(menuOpacitySpinButton);
         basicTransparencyGroup.add(menuOpacityRow);
 
+        // Zorin Theme Tint Strength (only affects Zorin themes like ZorinBlue, ZorinGreen, etc.)
+        const tintStrengthRow = new Adw.ActionRow({
+            title: _("Zorin Theme Tint Strength (%)"),
+            subtitle: _(
+                "Removes color tint from Zorin theme backgrounds (0% = fully neutral grey, 100% = original colored backgrounds). Only works with Zorin themes (ZorinBlue-Dark, ZorinGreen-Light, etc.). Other themes are unaffected."
+            )
+        });
+
+        const tintStrengthSpinButton = new Gtk.SpinButton({
+            adjustment: new Gtk.Adjustment({
+                lower: 0,
+                upper: 100,
+                step_increment: 5,
+                page_increment: 10
+            }),
+            digits: 0,
+            valign: Gtk.Align.CENTER
+        });
+        settings.bind("zorin-tint-strength", tintStrengthSpinButton, "value", Gio.SettingsBindFlags.DEFAULT);
+        tintStrengthRow.add_suffix(tintStrengthSpinButton);
+        basicTransparencyGroup.add(tintStrengthRow);
+
         transparencyPage.add(basicTransparencyGroup);
 
         // Panel options group
@@ -728,7 +750,11 @@ export default class CSSGnommePreferences extends ExtensionPreferences {
         borderRadiusRow.add_suffix(borderRadiusSpinButton);
         panelOptionsGroup.add(borderRadiusRow);
 
-        // Apply panel radius
+        // Apply panel radius - COMMENTED OUT (automatic behavior based on panel-margin)
+        // When panel-margin > 0, border-radius is automatically applied (floating mode)
+        // When panel-margin = 0, border-radius is disabled (flat pinned panel looks better)
+        // Keeping code for future reference in case manual override control is needed
+        /*
         const applyPanelRadiusRow = new Adw.ActionRow({
             title: _("Apply border radius to main panel"),
             subtitle: _("Enable rounded corners on taskbar for modern appearance")
@@ -738,6 +764,7 @@ export default class CSSGnommePreferences extends ExtensionPreferences {
         applyPanelRadiusRow.add_suffix(applyPanelRadiusSwitch);
         applyPanelRadiusRow.set_activatable_widget(applyPanelRadiusSwitch);
         panelOptionsGroup.add(applyPanelRadiusRow);
+        */
 
         transparencyPage.add(panelOptionsGroup);
 
@@ -1058,12 +1085,9 @@ export default class CSSGnommePreferences extends ExtensionPreferences {
 
         advancedPage.add(indicatorGroup);
 
-        // Theme Auto-Switching Group (Advanced)
-        const themeFilteringGroup = new Adw.PreferencesGroup({
-            title: _("Automatic Theme Variant Switching") //,
-            // description: _(
-            //     "Automatically switch between Light/Dark theme variants when toggling appearance in Quick Settings"
-            // )
+        // Automation Group (Theme Auto-Switching + Full Auto Mode)
+        const automationGroup = new Adw.PreferencesGroup({
+            title: _("Automation")
         });
 
         // Auto-switch theme variant switch
@@ -1079,7 +1103,7 @@ export default class CSSGnommePreferences extends ExtensionPreferences {
         settings.bind("auto-switch-color-scheme", autoSwitchColorSchemeSwitch, "active", Gio.SettingsBindFlags.DEFAULT);
         autoSwitchColorSchemeRow.add_suffix(autoSwitchColorSchemeSwitch);
         autoSwitchColorSchemeRow.activatable_widget = autoSwitchColorSchemeSwitch;
-        themeFilteringGroup.add(autoSwitchColorSchemeRow);
+        automationGroup.add(autoSwitchColorSchemeRow);
 
         // Info label for auto-switch behavior
         const filterInfoRow = new Adw.ActionRow({
@@ -1089,15 +1113,7 @@ export default class CSSGnommePreferences extends ExtensionPreferences {
             )
         });
         filterInfoRow.set_sensitive(false); // Non-interactive info label
-        themeFilteringGroup.add(filterInfoRow);
-
-        advancedPage.add(themeFilteringGroup);
-
-        // Full Auto Mode group
-        const fullAutoModeGroup = new Adw.PreferencesGroup({
-            title: _("Color Extraction Mode") //,
-            // description: _("Control how wallpaper colors are applied to blur effects")
-        });
+        automationGroup.add(filterInfoRow);
 
         // Full Auto Mode switch
         const fullAutoModeRow = new Adw.ActionRow({
@@ -1110,7 +1126,7 @@ export default class CSSGnommePreferences extends ExtensionPreferences {
         settings.bind("full-auto-mode", fullAutoModeSwitch, "active", Gio.SettingsBindFlags.DEFAULT);
         fullAutoModeRow.add_suffix(fullAutoModeSwitch);
         fullAutoModeRow.set_activatable_widget(fullAutoModeSwitch);
-        fullAutoModeGroup.add(fullAutoModeRow);
+        automationGroup.add(fullAutoModeRow);
 
         // Info label explaining modes
         const modeInfoRow = new Adw.ActionRow({
@@ -1118,9 +1134,9 @@ export default class CSSGnommePreferences extends ExtensionPreferences {
                 "ℹ️ " + _("Standard: Theme accent + Wallpaper backgrounds | Full Auto: Wallpaper controls everything")
         });
         modeInfoRow.set_sensitive(false); // Non-interactive info label
-        fullAutoModeGroup.add(modeInfoRow);
+        automationGroup.add(modeInfoRow);
 
-        advancedPage.add(fullAutoModeGroup);
+        advancedPage.add(automationGroup);
 
         // Debugging group
         const debuggingGroup = new Adw.PreferencesGroup({
@@ -1151,21 +1167,14 @@ export default class CSSGnommePreferences extends ExtensionPreferences {
             title: _("CSS Gnommé - Dynamic GTK Theme Overlay for Zorin OS")
         });
 
-        // Version info
-        const versionRow = new Adw.ActionRow({
-            title: _("Version"),
-            subtitle: _("2.3")
-        });
-        aboutGroup.add(versionRow);
-
-        // Author info
-        const authorRow = new Adw.ActionRow({
-            title: _("Author") + ": drdrummie",
+        // Version + Author info (compact)
+        const versionAuthorRow = new Adw.ActionRow({
+            title: _("Version") + ": v2.4 | " + _("Author") + ": drdrummie",
             subtitle: _(
                 "Developed for Zorin OS 18+ (GNOME Shell 46+), inspired by Cinnamon CSS Panels and gnome Open Bar extensions."
             )
         });
-        aboutGroup.add(authorRow);
+        aboutGroup.add(versionAuthorRow);
 
         aboutPage.add(aboutGroup);
 
