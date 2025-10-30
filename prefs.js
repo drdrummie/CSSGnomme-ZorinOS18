@@ -1169,7 +1169,7 @@ export default class CSSGnommePreferences extends ExtensionPreferences {
 
         // Version + Author info (compact)
         const versionAuthorRow = new Adw.ActionRow({
-            title: _("Version") + ": v2.4 | " + _("Author") + ": drdrummie",
+            title: _("Version") + ": v2.5.1 | " + _("Author") + ": drdrummie",
             subtitle: _(
                 "Developed for Zorin OS 18+ (GNOME Shell 46+), inspired by Cinnamon CSS Panels and gnome Open Bar extensions."
             )

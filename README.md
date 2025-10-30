@@ -183,11 +183,14 @@ gnome-extensions list --enabled
 
 ---
 
-## ⚠️ Known Limitations
+## ⚠️ Known Limitations | Issues
 
 - **Theme Compatibility**: Overlay theme inherits from current GTK theme (some themes may have compatibility issues)
+- **Fluent GTK Themes**: Missing some icons, not sure why, but same behavior is even without the extension installed
 - **Color Extraction**: Requires valid image wallpaper (not solid colors or gradients)
-- **Zorin Integration**: Full integration requires ZorinOS 18 / GNOME 46+
+- **Zorin Integration**: Full integration requires ZorinOS 18 / GNOME 46+ (CSS Gnommé "cooperates" with Zorin taskbar)
+- **Zorin Taskbar Border-Radius "issues"**: Zorin taskbar uses inline styles and javascript to achive some of it's functionality, still, border-radius in Zorin have step of 5 (flat | 5px | 10px | 15px - default | 20px | 25px+) - CSS Gnommé uses "normal" border radius, but tries to "adapt" to Zorin taskbar.  
+It seems, for taskbar, that hoover states have some bug in it. It is noteworthy that with border-radius set to zero - returns default Zorin's 15px border-radius (even without the extension installed).
 - **Performance**: Complex blur effects may impact performance on older hardware, theme switching also
 
 ---
@@ -225,8 +228,9 @@ This project is licensed under the GNU General Public License v3.0 or later - se
 ## 🙏 Acknowledgments
 
 - GNOME Shell team for the extension API
-- Zorin OS team for the excellent desktop environment
+- Zorin OS team for the work they put in excellent desktop environment
 - Open Bar extension for color extraction inspiration
+- CSS Panels extension (Cinnamon)
 
 ---
 

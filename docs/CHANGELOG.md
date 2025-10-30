@@ -188,11 +188,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Note
 
 - This is the legacy branch for ZorinOS 17 / GNOME 43-44
-- See `zorinos17-v15` branch for source code
+- See `CSSGnomme-ZorinOS17` branch for source code
 - Active maintenance for critical fixes only
 
 ---
 
 ## Earlier Versions
 
-For complete version history of v1.x series, see the `zorinos17-v15` branch.
+For complete version history of v1.x series or download for gnome 43-44, see the `CSSGnomme-ZorinOS17` repository.
