@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-10-29 19:51+0100\n"
+"POT-Creation-Date: 2025-10-31 10:52+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -33,538 +33,554 @@ msgstr ""
 msgid "Open Settings"
 msgstr ""
 
-#: src/extension.js:705
+#: src/extension.js:718
 msgid "Colors extracted and applied from background image"
 msgstr ""
 
-#: src/extension.js:712
+#: src/extension.js:725
 msgid "No background image found or unable to extract colors"
 msgstr ""
 
-#: src/extension.js:717
+#: src/extension.js:730
 msgid "Error extracting colors: "
 msgstr ""
 
-#: src/extension.js:1011
+#: src/extension.js:1024
 msgid "Overlay theme is not enabled"
 msgstr ""
 
-#: src/extension.js:1039
+#: src/extension.js:1052
 msgid "Overlay theme updated successfully"
 msgstr ""
 
-#: src/extension.js:1042
+#: src/extension.js:1055
 msgid "Failed to update overlay theme"
 msgstr ""
 
-#: src/extension.js:1047 src/extension.js:1104 src/extension.js:1198
+#: src/extension.js:1060 src/extension.js:1117 src/extension.js:1211
 msgid "Error: "
 msgstr ""
 
-#: src/extension.js:1073
+#: src/extension.js:1086
 msgid "Overlay theme created and activated"
 msgstr ""
 
-#: src/extension.js:1076
+#: src/extension.js:1089
 msgid "Failed to create overlay theme"
 msgstr ""
 
-#: src/extension.js:1085
+#: src/extension.js:1098
 msgid "Error enabling overlay: "
 msgstr ""
 
-#: src/extension.js:1098
+#: src/extension.js:1111
 msgid "Overlay theme disabled"
 msgstr ""
 
-#: src/extension.js:1188
+#: src/extension.js:1201
 msgid "Overlay theme recreated and applied"
 msgstr ""
 
-#: src/extension.js:1189
+#: src/extension.js:1202
 msgid "Overlay theme recreated (enable to apply)"
 msgstr ""
 
-#: src/extension.js:1193
+#: src/extension.js:1206
 msgid "Failed to recreate overlay"
 msgstr ""
 
-#: src/prefs.js:133
+#: src/prefs.js:149
 msgid "Theme Overlay"
 msgstr ""
 
-#: src/prefs.js:139
+#: src/prefs.js:155
 msgid "Theme Integration"
 msgstr ""
 
-#: src/prefs.js:140
+#: src/prefs.js:156
 msgid ""
 "CSS Gnomme creates a dynamic overlay theme that sits on top of your current "
 "theme"
 msgstr ""
 
-#: src/prefs.js:145
+#: src/prefs.js:161
 msgid "Enable Overlay Theme"
 msgstr ""
 
-#: src/prefs.js:146
+#: src/prefs.js:162
 msgid "Activate CSS Gnomme overlay with custom styling and color extraction"
 msgstr ""
 
-#: src/prefs.js:158
+#: src/prefs.js:174
 msgid "Base Theme"
 msgstr ""
 
-#: src/prefs.js:159
+#: src/prefs.js:175
 msgid "Select the theme to use as foundation for overlay"
 msgstr ""
 
-#: src/prefs.js:352
+#: src/prefs.js:368
 msgid "Overlay Status"
 msgstr ""
 
-#: src/prefs.js:353
+#: src/prefs.js:369
 msgid "Checking..."
 msgstr ""
 
-#: src/prefs.js:364
+#: src/prefs.js:380
 msgid "Inactive - Enable overlay to apply custom theme"
 msgstr ""
 
-#: src/prefs.js:378
+#: src/prefs.js:394
 msgid "Enable Zorin OS Integration"
 msgstr ""
 
-#: src/prefs.js:380
+#: src/prefs.js:396
 msgid ""
 "Syncs panel settings with Zorin Taskbar (margin, border radius, opacity). "
 "For Fluent-based themes, adds Zorin-style floating panel enhancements and "
 "modern aesthetics."
 msgstr ""
 
-#: src/prefs.js:393
+#: src/prefs.js:409
 msgid "Auto-detect theme border radius"
 msgstr ""
 
-#: src/prefs.js:394
+#: src/prefs.js:410
 msgid "Automatically detect and use border-radius from current theme"
 msgstr ""
 
-#: src/prefs.js:406 src/prefs.js:1197
+#: src/prefs.js:422 src/prefs.js:1268
 msgid "Automatic Color Extraction"
 msgstr ""
 
-#: src/prefs.js:412
+#: src/prefs.js:428
 msgid "Auto-detect colors on wallpaper change"
 msgstr ""
 
-#: src/prefs.js:413
+#: src/prefs.js:429
 msgid ""
 "Automatically extract and apply colors when you change your desktop "
 "background"
 msgstr ""
 
-#: src/prefs.js:425
+#: src/prefs.js:441
 msgid "Extract Colors Now"
 msgstr ""
 
-#: src/prefs.js:426
+#: src/prefs.js:442
 msgid "Manually trigger color extraction from current wallpaper"
 msgstr ""
 
-#: src/prefs.js:429
+#: src/prefs.js:445
 msgid "Extract from Wallpaper"
 msgstr ""
 
-#: src/prefs.js:445
+#: src/prefs.js:461
 msgid "Manual Controls"
 msgstr ""
 
-#: src/prefs.js:451
+#: src/prefs.js:467
 msgid "Apply Changes Now"
 msgstr ""
 
-#: src/prefs.js:452
+#: src/prefs.js:468
 msgid "Manually update overlay theme (auto-update has 2s delay)"
 msgstr ""
 
-#: src/prefs.js:456
+#: src/prefs.js:472
 msgid "Apply"
 msgstr ""
 
-#: src/prefs.js:478
+#: src/prefs.js:494
 msgid "Overlay Update Triggered"
 msgstr ""
 
-#: src/prefs.js:479
+#: src/prefs.js:495
 msgid "The theme overlay has been updated with your current settings."
 msgstr ""
 
-#: src/prefs.js:491
+#: src/prefs.js:507
 msgid "Recreate Overlay"
 msgstr ""
 
-#: src/prefs.js:496
+#: src/prefs.js:512
 msgid "Recreate"
 msgstr ""
 
-#: src/prefs.js:514
+#: src/prefs.js:530
 msgid "Overlay Recreation Triggered"
 msgstr ""
 
-#: src/prefs.js:515
+#: src/prefs.js:531
 msgid ""
 "The theme overlay is being completely rebuilt from the selected base theme."
 msgstr ""
 
-#: src/prefs.js:531
+#: src/prefs.js:547
 msgid "Color Settings"
 msgstr ""
 
-#: src/prefs.js:537
+#: src/prefs.js:553
 msgid "Basic Transparency Controls"
 msgstr ""
 
-#: src/prefs.js:542
+#: src/prefs.js:558
 msgid "Panel Opacity"
 msgstr ""
 
-#: src/prefs.js:543
+#: src/prefs.js:559
 msgid ""
 "Adjust the transparency of the main panel (0.0 = fully transparent, 1.0 = "
 "fully opaque)"
 msgstr ""
 
-#: src/prefs.js:562
+#: src/prefs.js:578
 msgid "Menu Opacity"
 msgstr ""
 
-#: src/prefs.js:563
+#: src/prefs.js:579
 msgid ""
 "Adjust the transparency of popup menus (0.0 = fully transparent, 1.0 = fully "
 "opaque)"
 msgstr ""
 
-#: src/prefs.js:582
+#: src/prefs.js:598
 msgid "Zorin Theme Tint Strength (%)"
 msgstr ""
 
-#: src/prefs.js:584
+#: src/prefs.js:600
 msgid ""
 "Removes color tint from Zorin theme backgrounds (0% = fully neutral grey, "
 "100% = original colored backgrounds). Only works with Zorin themes "
 "(ZorinBlue-Dark, ZorinGreen-Light, etc.). Other themes are unaffected."
 msgstr ""
 
-#: src/prefs.js:606
+#: src/prefs.js:622
 msgid "Panel Appearance"
 msgstr ""
 
-#: src/prefs.js:611
+#: src/prefs.js:627
 msgid "Panel Margin"
 msgstr ""
 
-#: src/prefs.js:613
+#: src/prefs.js:629
 msgid ""
 "Horizontal spacing from screen edges (0 = pinned to edges, >0 = floating "
 "panel with modern appearance)"
 msgstr ""
 
-#: src/prefs.js:631
+#: src/prefs.js:647
 msgid "Override panel color"
 msgstr ""
 
-#: src/prefs.js:632
+#: src/prefs.js:648
 msgid "Use custom color for panel background instead of theme color"
 msgstr ""
 
-#: src/prefs.js:642
+#: src/prefs.js:658
 msgid "Choose override panel color"
 msgstr ""
 
-#: src/prefs.js:643
+#: src/prefs.js:659
 msgid "Select background color for panel when override is enabled"
 msgstr ""
 
-#: src/prefs.js:684
+#: src/prefs.js:700
 msgid "Override popup color"
 msgstr ""
 
-#: src/prefs.js:685
+#: src/prefs.js:701
 msgid "Use custom color for popup menu backgrounds"
 msgstr ""
 
-#: src/prefs.js:695
+#: src/prefs.js:711
 msgid "Choose override popup color"
 msgstr ""
 
-#: src/prefs.js:696
+#: src/prefs.js:712
 msgid "Select background color for popup menus when override is enabled"
 msgstr ""
 
-#: src/prefs.js:737
+#: src/prefs.js:753
 msgid "Border Radius"
 msgstr ""
 
-#: src/prefs.js:738
+#: src/prefs.js:754
 msgid "Rounded corners for panels and menus (0-25px)"
 msgstr ""
 
-#: src/prefs.js:775
+#: src/prefs.js:791
 msgid "Blur Effects"
 msgstr ""
 
-#: src/prefs.js:781
+#: src/prefs.js:797
 msgid "Custom Blur and Border Settings"
 msgstr ""
 
-#: src/prefs.js:786
+#: src/prefs.js:802
 msgid "Blur radius"
 msgstr ""
 
-#: src/prefs.js:787
+#: src/prefs.js:803
 msgid "Controls the intensity of the blur effect"
 msgstr ""
 
-#: src/prefs.js:804
+#: src/prefs.js:820
 msgid "Saturation multiplier"
 msgstr ""
 
-#: src/prefs.js:805
+#: src/prefs.js:821
 msgid "Adjusts color vibrancy in the blurred background"
 msgstr ""
 
-#: src/prefs.js:823
+#: src/prefs.js:839
 msgid "Contrast multiplier"
 msgstr ""
 
-#: src/prefs.js:824
+#: src/prefs.js:840
 msgid "Controls the difference between light and dark areas"
 msgstr ""
 
-#: src/prefs.js:842
+#: src/prefs.js:858
 msgid "Brightness multiplier"
 msgstr ""
 
-#: src/prefs.js:843
+#: src/prefs.js:859
 msgid "Modifies the overall lightness of the blurred layer"
 msgstr ""
 
-#: src/prefs.js:861
+#: src/prefs.js:877
 msgid "Background color/tint"
 msgstr ""
 
-#: src/prefs.js:862
+#: src/prefs.js:878
 msgid "Adds a tint overlay to the blur effect"
 msgstr ""
 
-#: src/prefs.js:903
+#: src/prefs.js:919
 msgid "Border color"
 msgstr ""
 
-#: src/prefs.js:904
+#: src/prefs.js:920
 msgid "Sets the color of the subtle border framing the blurred elements"
 msgstr ""
 
-#: src/prefs.js:945
+#: src/prefs.js:961
 msgid "Border width"
 msgstr ""
 
-#: src/prefs.js:946
+#: src/prefs.js:962
 msgid "Defines the thickness of the border around blurred elements"
 msgstr ""
 
-#: src/prefs.js:963
+#: src/prefs.js:979
 msgid "Blur opacity"
 msgstr ""
 
-#: src/prefs.js:965
+#: src/prefs.js:981
 msgid ""
 "Controls the transparency of the entire blur layer (0.0 = invisible blur, "
 "1.0 = full blur effect)"
 msgstr ""
 
-#: src/prefs.js:986
+#: src/prefs.js:1002
 msgid "Shadow Effects"
 msgstr ""
 
-#: src/prefs.js:991
+#: src/prefs.js:1007
 msgid "Shadow strength"
 msgstr ""
 
-#: src/prefs.js:992
+#: src/prefs.js:1008
 msgid ""
 "Controls outer glow spread around panels and menus (0.0 = no shadow, 0.8 = "
 "wide halo)"
 msgstr ""
 
-#: src/prefs.js:1010
+#: src/prefs.js:1026
 msgid "Shadow color"
 msgstr ""
 
-#: src/prefs.js:1011
+#: src/prefs.js:1027
 msgid ""
 "Sets the base color of shadows, automatically adjusted for light/dark themes"
 msgstr ""
 
-#: src/prefs.js:1055
+#: src/prefs.js:1071
 msgid "Advanced Settings"
 msgstr ""
 
-#: src/prefs.js:1061
+#: src/prefs.js:1077
 msgid "Interface Behavior"
 msgstr ""
 
-#: src/prefs.js:1066
+#: src/prefs.js:1082
 msgid "Hide system tray indicator"
 msgstr ""
 
-#: src/prefs.js:1067
+#: src/prefs.js:1083
 msgid "Hide the transparency control icon from the system tray"
 msgstr ""
 
-#: src/prefs.js:1077
+#: src/prefs.js:1093
 msgid "Enable notifications"
 msgstr ""
 
-#: src/prefs.js:1078
+#: src/prefs.js:1094
 msgid ""
 "Show desktop notifications for theme changes, color extraction, and "
 "extension events"
 msgstr ""
 
-#: src/prefs.js:1090
+#: src/prefs.js:1105
+msgid "Zorin Menu Layout Style"
+msgstr ""
+
+#: src/prefs.js:1108
+msgid ""
+"Standard Zorin (categories+apps+sidebar), Mint Style (hover), Grid View, "
+"Apps Only, or Shortcuts Only"
+msgstr ""
+
+#: src/prefs.js:1110
+msgid ""
+"⚠️ Zorin Menu extension not installed or not enabled. Enable it first to use "
+"this feature."
+msgstr ""
+
+#: src/prefs.js:1161
 msgid "Automation"
 msgstr ""
 
-#: src/prefs.js:1095
+#: src/prefs.js:1166
 msgid "Auto-switch between Light/Dark variants"
 msgstr ""
 
-#: src/prefs.js:1097
+#: src/prefs.js:1168
 msgid ""
 "Monitors Quick Settings Dark/Light toggle and automatically switches to "
 "matching theme variant (e.g., ZorinPurple-Light ↔ ZorinPurple-Dark). Also "
 "filters dropdown to show only matching themes."
 msgstr ""
 
-#: src/prefs.js:1110 src/prefs.js:1183
+#: src/prefs.js:1181 src/prefs.js:1254
 msgid "How It Works"
 msgstr ""
 
-#: src/prefs.js:1112
+#: src/prefs.js:1183
 msgid ""
 "When enabled: Quick Settings toggle automatically switches your theme "
 "between -Dark and -Light variants. Dropdown shows only themes matching "
 "current appearance. When disabled: Manual theme selection, all themes shown."
 msgstr ""
 
-#: src/prefs.js:1120
+#: src/prefs.js:1191
 msgid "Full Auto Mode"
 msgstr ""
 
-#: src/prefs.js:1122
+#: src/prefs.js:1193
 msgid ""
 "Experimental: Wallpaper extraction controls ALL colors including blur "
 "effects (border, background, shadow). When disabled, theme controls blur "
 "effects while wallpaper controls panel/popup."
 msgstr ""
 
-#: src/prefs.js:1134
+#: src/prefs.js:1205
 msgid ""
 "Standard: Theme accent + Wallpaper backgrounds | Full Auto: Wallpaper "
 "controls everything"
 msgstr ""
 
-#: src/prefs.js:1143
+#: src/prefs.js:1214
 msgid "Debugging"
 msgstr ""
 
-#: src/prefs.js:1148
+#: src/prefs.js:1219
 msgid "Enable debug logging"
 msgstr ""
 
-#: src/prefs.js:1149
+#: src/prefs.js:1220
 msgid "Enable detailed logging for troubleshooting extension issues"
 msgstr ""
 
-#: src/prefs.js:1162
+#: src/prefs.js:1233
 msgid "About"
 msgstr ""
 
-#: src/prefs.js:1167
+#: src/prefs.js:1238
 msgid "CSS Gnommé - Dynamic GTK Theme Overlay for Zorin OS"
 msgstr ""
 
-#: src/prefs.js:1172
+#: src/prefs.js:1243
 msgid "Version"
 msgstr ""
 
-#: src/prefs.js:1172
+#: src/prefs.js:1243
 msgid "Author"
 msgstr ""
 
-#: src/prefs.js:1174
+#: src/prefs.js:1245
 msgid ""
 "Developed for Zorin OS 18+ (GNOME Shell 46+), inspired by Cinnamon CSS "
 "Panels and gnome Open Bar extensions."
 msgstr ""
 
-#: src/prefs.js:1188
+#: src/prefs.js:1259
 msgid "Overlay Theme System"
 msgstr ""
 
-#: src/prefs.js:1190
+#: src/prefs.js:1261
 msgid ""
 "Creates a dynamic overlay at ~/.themes/CSSGnomme/ that sits on top of your "
 "current theme via @import. Fully reversible, doesn't modify original theme "
 "files."
 msgstr ""
 
-#: src/prefs.js:1199
+#: src/prefs.js:1270
 msgid ""
 "Analyzes wallpaper using K-means clustering, extracts dominant and accent "
 "colors, applies darker variants to panels and brighter variants to menus. "
 "Triggers on wallpaper change or manually."
 msgstr ""
 
-#: src/prefs.js:1206
+#: src/prefs.js:1277
 msgid "Advanced Blur Effects"
 msgstr ""
 
-#: src/prefs.js:1208
+#: src/prefs.js:1279
 msgid ""
 "Uses CSS backdrop-filter for frosted glass appearance. All settings (radius, "
 "saturate, contrast, brightness) dynamically read from preferences. Applies "
 "to menus, Alt+Tab, and shell elements."
 msgstr ""
 
-#: src/prefs.js:1215
+#: src/prefs.js:1286
 msgid "Zorin OS Integration"
 msgstr ""
 
-#: src/prefs.js:1217
+#: src/prefs.js:1288
 msgid ""
 "Enhanced styling for Zorin Taskbar and panels. Note: Window Preview uses "
 "inline JavaScript styles that override CSS."
 msgstr ""
 
-#: src/prefs.js:1224
+#: src/prefs.js:1295
 msgid "What Gets Styled"
 msgstr ""
 
-#: src/prefs.js:1226
+#: src/prefs.js:1297
 msgid ""
 "GNOME Shell panel, Zorin taskbar, popup menus, Alt+Tab switcher, Quick "
 "Settings, notifications, OSD, and Dash. GTK3/GTK4 apps inherit base theme "
 "with optional overrides."
 msgstr ""
 
-#: src/prefs.js:1233
+#: src/prefs.js:1304
 msgid "Known Limitations"
 msgstr ""
 
-#: src/prefs.js:1235
+#: src/prefs.js:1306
 msgid ""
 "Theme switching: Flicker on theme refresh. Window Preview: Zorin Taskbar "
 "uses inline JavaScript styles that override CSS. Wayland: Shell restart "

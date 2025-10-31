@@ -50,6 +50,7 @@
 - **Opacity Sync**: Synchronize opacity with Zorin Taskbar settings
 - **Border Radius**: Synchronize rounded corners for modern appearance (0-25px) with Zorin Taskbar settings
 - **Tint Control**: Adjust Zorin theme color tint intensity (0-100%) for more neutral or vibrant appearance
+- **Zorin Menu Layout**: ZorinOS default menu has some advanced options for appearance like "MINT" style, "APP_GRID" style, etc., but I didn't found a way to "simply" activate them (perhaps that is still not ready, or it is for "pro" version only, still, I've added them here for additional styling options)
 
 ### 🎛️ Customizable Transparency
 

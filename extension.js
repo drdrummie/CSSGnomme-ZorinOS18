@@ -260,6 +260,10 @@ export default class CSSGnommeExtension extends Extension {
         this._zorinStyler.syncPanelMargin(initialMargin);
         this._zorinStyler.syncBorderRadius(initialRadius);
 
+        // Initial sync of Zorin Menu layout (if connected)
+        const initialMenuLayout = this._settings.get_string("zorin-menu-layout");
+        this._zorinStyler.syncMenuLayout(initialMenuLayout);
+
         // Connect settings on EACH enable (disconnected on disable)
         this._connectSettings();
 
@@ -466,6 +470,15 @@ export default class CSSGnommeExtension extends Extension {
                     const radius = this._settings.get_int("border-radius");
                     this._zorinStyler.syncBorderRadius(radius);
                     this._onCssSettingChanged("border-radius");
+                }
+            ],
+            [
+                this._settings,
+                "changed::zorin-menu-layout",
+                () => {
+                    const layout = this._settings.get_string("zorin-menu-layout");
+                    this._zorinStyler.syncMenuLayout(layout);
+                    this._logger.info(`Zorin Menu layout changed to: ${layout}`);
                 }
             ],
             [

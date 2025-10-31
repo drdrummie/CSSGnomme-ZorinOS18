@@ -109,6 +109,22 @@ function _discoverInstalledThemes() {
     return themeArray;
 }
 
+/**
+ * Check if Zorin Menu extension is installed and enabled
+ * @returns {boolean} True if Zorin Menu is available
+ */
+function _isZorinMenuAvailable() {
+    try {
+        // Check if extension is in enabled-extensions list
+        const shellSettings = new Gio.Settings({ schema_id: "org.gnome.shell" });
+        const enabledExtensions = shellSettings.get_strv("enabled-extensions");
+        return enabledExtensions.includes("zorin-menu@zorinos.com");
+    } catch (e) {
+        // If org.gnome.shell schema not accessible (unlikely in prefs context)
+        return false;
+    }
+}
+
 export default class CSSGnommePreferences extends ExtensionPreferences {
     fillPreferencesWindow(window) {
         const settings = this.getSettings();
@@ -1083,6 +1099,61 @@ export default class CSSGnommePreferences extends ExtensionPreferences {
         notificationsRow.set_activatable_widget(notificationsSwitch);
         indicatorGroup.add(notificationsRow);
 
+        // Zorin Menu Layout Control (power user feature - not exposed in Zorin Appearance)
+        const zorinMenuAvailable = _isZorinMenuAvailable();
+        const zorinMenuLayoutRow = new Adw.ComboRow({
+            title: _("Zorin Menu Layout Style"),
+            subtitle: zorinMenuAvailable
+                ? _(
+                      "Standard Zorin (categories+apps+sidebar), Mint Style (hover), Grid View, Apps Only, or Shortcuts Only"
+                  )
+                : _("⚠️ Zorin Menu extension not installed or not enabled. Enable it first to use this feature.")
+        });
+
+        // Layout options - SHORT names like sourceThemeRow (long labels don't fit in ComboRow!)
+        const layoutOptions = new Gtk.StringList();
+        layoutOptions.append("ALL"); // Standard Zorin layout
+        layoutOptions.append("MINT"); // Linux Mint style
+        layoutOptions.append("APP_GRID"); // Grid view
+        layoutOptions.append("APPS_ONLY"); // Apps list only
+        layoutOptions.append("SYSTEM_ONLY"); // Shortcuts only
+
+        zorinMenuLayoutRow.set_model(layoutOptions);
+
+        // Set current value from settings
+        const currentLayout = settings.get_string("zorin-menu-layout");
+        const layoutEnums = ["ALL", "MINT", "APP_GRID", "APPS_ONLY", "SYSTEM_ONLY"];
+        const layoutIndex = layoutEnums.indexOf(currentLayout);
+        if (layoutIndex >= 0) {
+            zorinMenuLayoutRow.set_selected(layoutIndex);
+        }
+
+        // Disable row if Zorin Menu not available
+        zorinMenuLayoutRow.set_sensitive(zorinMenuAvailable);
+
+        // Connect change signal - sync to Zorin Menu GSettings
+        zorinMenuLayoutRow.connect("notify::selected", () => {
+            const selectedLayout = layoutEnums[zorinMenuLayoutRow.get_selected()];
+
+            // Save to CSSGnomme settings
+            settings.set_string("zorin-menu-layout", selectedLayout);
+
+            // Sync to Zorin Menu extension (if available)
+            if (zorinMenuAvailable) {
+                try {
+                    const zorinMenuSettings = new Gio.Settings({
+                        schema_id: "org.gnome.shell.extensions.zorin-menu"
+                    });
+                    zorinMenuSettings.set_string("layout", selectedLayout);
+                    log(`[CSSGnomme:Prefs] Zorin Menu layout set to: ${selectedLayout}`);
+                } catch (e) {
+                    log(`[CSSGnomme:Prefs] Error setting Zorin Menu layout: ${e.message}`);
+                }
+            }
+        });
+
+        indicatorGroup.add(zorinMenuLayoutRow);
+
         advancedPage.add(indicatorGroup);
 
         // Automation Group (Theme Auto-Switching + Full Auto Mode)
@@ -1169,7 +1240,7 @@ export default class CSSGnommePreferences extends ExtensionPreferences {
 
         // Version + Author info (compact)
         const versionAuthorRow = new Adw.ActionRow({
-            title: _("Version") + ": v2.5.1 | " + _("Author") + ": drdrummie",
+            title: _("Version") + ": v2.5.2 | " + _("Author") + ": drdrummie",
             subtitle: _(
                 "Developed for Zorin OS 18+ (GNOME Shell 46+), inspired by Cinnamon CSS Panels and gnome Open Bar extensions."
             )

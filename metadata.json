@@ -2,7 +2,7 @@
     "uuid": "cssgnomme@dr.drummie",
     "name": "CSS Gnommé - Dynamic Theme Overlay (ZorinOS 18+)",
     "description": "Advanced panel/popup transparency, blur effects, and wallpaper color extraction for GNOME Shell 45-47. Non-destructive theme overlays with live updates.",
-    "version": 2.51,
+    "version": 2.52,
     "shell-version": ["45", "46", "47"],
     "url": "https://github.com/drdrummie/CSSGnomme-ZorinOS18",
     "settings-schema": "org.gnome.shell.extensions.cssgnomme",

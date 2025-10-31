@@ -33,7 +33,9 @@ export const ZorinStyler = GObject.registerClass(
 
             this._settings = settings;
             this._zorinSettings = null;
+            this._zorinMenuSettings = null; // Zorin Menu GSettings (separate extension)
             this._isConnected = false;
+            this._isMenuConnected = false; // Track Zorin Menu connection separately
             this._signalsHandler = new GlobalSignalsHandler(); // Centralized signal management (ready for Master Mode)
 
             // Use provided logger or create fallback log function
@@ -50,6 +52,7 @@ export const ZorinStyler = GObject.registerClass(
             }
 
             this._connectToZorinSettings();
+            this._connectToZorinMenuSettings(); // Attempt Zorin Menu connection
         }
 
         /**
@@ -67,6 +70,53 @@ export const ZorinStyler = GObject.registerClass(
                 }
             } catch (error) {
                 this._logger.error(`Error accessing Zorin Taskbar GSettings: ${error}`);
+            }
+        }
+
+        /**
+         * Attempts to connect to Zorin Menu settings via GSettings
+         * Separate from Zorin Taskbar - different extension
+         */
+        _connectToZorinMenuSettings() {
+            try {
+                this._zorinMenuSettings = new Gio.Settings({
+                    schema: "org.gnome.shell.extensions.zorin-menu"
+                });
+
+                if (this._zorinMenuSettings) {
+                    this._isMenuConnected = true;
+                    this._logger.info("Successfully connected to Zorin Menu settings via GSettings");
+                } else {
+                    this._logger.warn("Could not access Zorin Menu GSettings");
+                }
+            } catch (error) {
+                // This is expected if Zorin Menu is not installed (not an error)
+                this._logger.debug(`Zorin Menu not available: ${error.message}`);
+            }
+        }
+
+        /**
+         * Sync Zorin Menu layout style
+         * @param {string} layout - Layout enum value: 'ALL', 'MINT', 'APP_GRID', 'APPS_ONLY', 'SYSTEM_ONLY'
+         */
+        syncMenuLayout(layout) {
+            if (!this._isMenuConnected) {
+                this._logger.debug("Zorin Menu not connected - cannot sync layout");
+                return;
+            }
+
+            try {
+                // Validate layout value
+                const validLayouts = ["ALL", "MINT", "APP_GRID", "APPS_ONLY", "SYSTEM_ONLY"];
+                if (!validLayouts.includes(layout)) {
+                    this._logger.error(`Invalid Zorin Menu layout: ${layout}`);
+                    return;
+                }
+
+                this._zorinMenuSettings.set_string("layout", layout);
+                this._logger.info(`Zorin Menu layout synced: ${layout}`);
+            } catch (e) {
+                this._logger.error(`Error syncing Zorin Menu layout: ${e.message}`);
             }
         }
 
@@ -176,7 +226,15 @@ export const ZorinStyler = GObject.registerClass(
                 this._zorinSettings.run_dispose();
                 this._zorinSettings = null;
             }
+
+            if (this._zorinMenuSettings) {
+                // Cleanup Zorin Menu GSettings (separate extension)
+                this._zorinMenuSettings.run_dispose();
+                this._zorinMenuSettings = null;
+            }
+
             this._isConnected = false;
+            this._isMenuConnected = false;
 
             this._logger.info("ZorinStyler destroyed");
         }

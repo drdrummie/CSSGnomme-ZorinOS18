@@ -247,6 +247,13 @@
       <description>When enabled, wallpaper color extraction controls ALL styling including blur effects (border, background, shadow). Standard mode: theme controls blur effects, wallpaper controls panel/popup. Full Auto: wallpaper controls everything.</description>
     </key>
 
+    <!-- Zorin Menu Layout Control (advanced feature for power users) -->
+    <key name="zorin-menu-layout" type="s">
+      <default>'ALL'</default>
+      <summary>Zorin Menu Layout Style</summary>
+      <description>Control Zorin Menu layout style: ALL (default Zorin), MINT (Linux Mint style with hover categories), APP_GRID (grid view), APPS_ONLY (no sidebar), SYSTEM_ONLY (shortcuts only). Requires Zorin Menu extension to be installed and enabled. Changes apply instantly without GNOME Shell restart.</description>
+    </key>
+
     <!-- Debug settings -->
     <key name="debug-logging" type="b">
       <default>false</default>

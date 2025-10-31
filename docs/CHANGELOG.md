@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.5.2] - 2025-10-31
+
+**Zorin App Menu Layout Options (core version)**
+
+### Added
+
+- **Zorin App Menu Layout Integration**: Now you can choose between "Mint" like layout, "Default (all)" layout, "App Grid" layout, etc. for appearance of Zorin "core" app menu (Advanced page)
+  
+---
+
 ## [2.5.1] - 2025-10-29
 
 **Quick Settings Enhancements + Dynamic Updates**
