@@ -398,7 +398,7 @@ export default class CSSGnommeExtension extends Extension {
             this._settings.set_string("blur-background", "rgba(0, 0, 0, 0.3)");
             this._settings.set_string("blur-border-color", "rgba(255, 255, 255, 0.15)");
             this._settings.set_int("blur-border-width", 1);
-            this._settings.set_double("shadow-strength", 0.3);
+            this._settings.set_double("shadow-strength", 0.4);
             this._settings.set_double("blur-opacity", 0.8);
             this._settings.set_boolean("enable-alttab-styling", false);
             this._settings.set_boolean("hide-tray-icon", false);

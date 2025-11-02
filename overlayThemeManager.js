@@ -369,11 +369,11 @@ export class OverlayThemeManager {
         // This prevents circular bug where OriginalGtkTheme = "CSSGnomme"
         let originalGtkTheme = sourceThemeName; // Fallback
         let originalShellTheme = sourceThemeName; // Fallback
-        let originalIconTheme = sourceThemeName; // Fallback
+        // Parse icon theme from source GTK theme's index.theme (designer's intent)
+        let originalIconTheme = this._parseSourceIconTheme(sourcePath);
 
         if (interfaceSettings) {
             const currentGtkTheme = interfaceSettings.get_string("gtk-theme");
-            const currentIconTheme = interfaceSettings.get_string("icon-theme");
 
             // ← FIX: If current theme is overlay, read from existing metadata
             if (currentGtkTheme === this.overlayName) {
@@ -384,22 +384,24 @@ export class OverlayThemeManager {
                     originalShellTheme =
                         metadata[`X-${this.extensionName}-Extension`].OriginalShellTheme || sourceThemeName;
                     originalIconTheme =
-                        metadata[`X-${this.extensionName}-Extension`].OriginalIconTheme || sourceThemeName;
+                        metadata[`X-${this.extensionName}-Extension`].OriginalIconTheme || originalIconTheme;
                     this._logger.info(
                         ` Preserved original themes from metadata: GTK=${originalGtkTheme}, Icon=${originalIconTheme}`
                     );
                 } else {
                     // No metadata, use sourceThemeName as fallback
                     originalGtkTheme = sourceThemeName;
-                    originalIconTheme = sourceThemeName;
-                    this._logger.warn(` Overlay active but no metadata - using sourceTheme as fallback`);
+                    // originalIconTheme already set from _parseSourceIconTheme above
+                    this._logger.warn(
+                        ` Overlay active but no metadata found - likely switching to new theme (${sourceThemeName})`
+                    );
                 }
             } else {
                 // Not using overlay, save current themes as originals
                 originalGtkTheme = currentGtkTheme;
-                originalIconTheme = currentIconTheme;
+                // originalIconTheme already set from _parseSourceIconTheme above (designer's intent)
                 this._logger.info(
-                    ` Saved current themes as originals: GTK=${originalGtkTheme}, Icon=${originalIconTheme}`
+                    ` Saved current GTK theme as original: GTK=${originalGtkTheme}, Icon=${originalIconTheme} (from source theme)`
                 );
             }
 
@@ -463,6 +465,35 @@ export class OverlayThemeManager {
             } catch (e) {
                 this._logger.warn(` Could not read original themes from GSettings: ${e.message}`);
             }
+        }
+
+        // === Manual Icon Theme Override (v2.5.3+) ===
+        // Allows user to select icon theme independently from source GTK theme
+        // Useful for themes with missing icon packs (e.g., Fluent GTK without Fluent icons)
+        let sourceIconTheme = null; // null = auto-detect from source theme
+        let manualIconOverrideEnabled = false;
+
+        if (settings) {
+            try {
+                manualIconOverrideEnabled = settings.get_boolean("manual-icon-theme-override");
+                if (manualIconOverrideEnabled) {
+                    const selectedIconTheme = settings.get_string("selected-icon-theme");
+                    if (selectedIconTheme && selectedIconTheme.trim() !== "") {
+                        sourceIconTheme = selectedIconTheme;
+                        this._logger.info(` Using MANUAL icon theme: ${sourceIconTheme}`);
+                    } else {
+                        this._logger.warn(` Manual icon override enabled but no theme selected - using auto-detection`);
+                    }
+                }
+            } catch (e) {
+                this._logger.warn(` Could not read manual-icon-theme-override setting: ${e.message}`);
+            }
+        }
+
+        // If manual override not set, sourceIconTheme remains null
+        // _writeIndexTheme() will call _parseSourceIconTheme() for auto-detection
+        if (!sourceIconTheme) {
+            this._logger.debug(` Using AUTO icon theme detection from source theme`);
         }
 
         try {
@@ -636,7 +667,9 @@ export class OverlayThemeManager {
                 gtkVersions,
                 originalGtkTheme,
                 originalShellTheme,
-                originalIconTheme
+                originalIconTheme,
+                sourceIconTheme, // Manual icon theme override (null = auto-detect)
+                manualIconOverrideEnabled // Whether user manually selected icon theme
             });
 
             // Write README (sync - small file)
@@ -1962,11 +1995,15 @@ export class OverlayThemeManager {
                 ? Constants.DEFAULT_SHADOW_COLORS.lightFallback
                 : Constants.DEFAULT_SHADOW_COLORS.darkFallback; // Auto-detect fallback
 
-        // Fixed blur values from constants (commit 94bb07e)
-        const shadowPanelBlur = Constants.SHADOW_BLUR_VALUES.panel;
-        const shadowPopupBlur = Constants.SHADOW_BLUR_VALUES.popup;
-        const shadowButtonBlur = Constants.SHADOW_BLUR_VALUES.button;
-        const shadowInsetBlur = Constants.SHADOW_BLUR_VALUES.inset;
+        // Dynamic shadow blur calculation based on shadow-strength setting
+        // Formula: baseShadow = shadowStrength * SHADOW_SPREAD_MULTIPLIER
+        // Then apply ratios for visual hierarchy (panel 1.0, popup/button 0.67, inset 1.25)
+        // Example: strength 0.4 → panel 12px, popup 8px, button 8px, inset 15px
+        const baseShadow = shadowStrength * Constants.SHADOW_SPREAD_MULTIPLIER;
+        const shadowPanelBlur = Math.round(baseShadow * Constants.SHADOW_BLUR_RATIOS.panel);
+        const shadowPopupBlur = Math.round(baseShadow * Constants.SHADOW_BLUR_RATIOS.popup);
+        const shadowButtonBlur = Math.round(baseShadow * Constants.SHADOW_BLUR_RATIOS.button);
+        const shadowInsetBlur = Math.round(baseShadow * Constants.SHADOW_BLUR_RATIOS.inset);
 
         return {
             timestamp,
@@ -2373,7 +2410,9 @@ export class OverlayThemeManager {
      * @param {Object} config.gtkVersions - GTK versions info
      * @param {string} [config.originalGtkTheme=''] - Original GTK theme to restore
      * @param {string} [config.originalShellTheme=''] - Original Shell theme to restore
-     * @param {string} [config.originalIconTheme=''] - Original icon theme to restore
+     * @param {string} [config.originalIconTheme=''] - Original icon theme (from GNOME settings before overlay)
+     * @param {string|null} [config.sourceIconTheme=null] - Manual icon theme override or null for auto-detect
+     * @param {boolean} [config.manualIconOverrideEnabled=false] - Whether manual icon override is enabled
      */
     _writeIndexTheme(config) {
         const {
@@ -2383,7 +2422,8 @@ export class OverlayThemeManager {
             originalGtkTheme = "",
             originalShellTheme = "",
             originalIconTheme = "",
-            sourceIconTheme = null
+            sourceIconTheme = null,
+            manualIconOverrideEnabled = false
         } = config;
 
         const timestamp = new Date().toISOString().slice(0, 19).replace("T", " ");
@@ -2392,8 +2432,17 @@ export class OverlayThemeManager {
         const hasGtk4 = gtkVersions["gtk-4.0"]?.exists || false;
         const hasDarkVariant = gtkVersions["gtk-3.0"]?.hasDarkCss || gtkVersions["gtk-4.0"]?.hasDarkCss || false;
 
-        // Use provided source icon theme or parse from source theme
+        // Determine ACTIVE icon theme (what GNOME will use right now)
         const iconTheme = sourceIconTheme || this._parseSourceIconTheme(sourcePath);
+
+        // Determine ORIGINAL icon theme (what to restore when overlay is disabled)
+        // ALWAYS restore originalIconTheme (what user had in GNOME settings BEFORE overlay)
+        // Manual override only affects ACTIVE theme, not RESTORE target
+        const iconThemeForRestore = originalIconTheme;
+
+        this._logger.info(
+            ` Icon theme setup: Active=${iconTheme}, Restore=${iconThemeForRestore}, Manual=${manualIconOverrideEnabled}`
+        );
 
         const content = `[Desktop Entry]
 Type=X-GNOME-Metatheme
@@ -2421,7 +2470,7 @@ HasGtk3=${hasGtk3}
 HasGtk4=${hasGtk4}
 OriginalGtkTheme=${originalGtkTheme}
 OriginalShellTheme=${originalShellTheme}
-OriginalIconTheme=${originalIconTheme}
+OriginalIconTheme=${iconThemeForRestore}
 `;
 
         this._writeFile(this.metadataFile, content);
@@ -2435,12 +2484,16 @@ OriginalIconTheme=${originalIconTheme}
         const file = Gio.File.new_for_path(this.metadataFile);
 
         if (!file.query_exists(null)) {
+            this._logger.debug(` readIndexTheme: File does not exist: ${this.metadataFile}`);
             return null;
         }
 
         try {
             const { success, contents } = this._readCSSFileSync(file);
-            if (!success) return null;
+            if (!success) {
+                this._logger.warn(` readIndexTheme: Failed to read file: ${this.metadataFile}`);
+                return null;
+            }
 
             const text = new TextDecoder().decode(contents);
             const metadata = {};
@@ -2891,8 +2944,35 @@ ${this.extensionName} GNOME Shell Extension
             const gtkVersions = this.detectGtkVersions(sourcePath);
             const shellTheme = this.detectShellTheme(sourcePath);
 
-            // Parse icon theme once for both index.theme and system settings
-            const sourceIconTheme = this._parseSourceIconTheme(sourcePath);
+            // === Manual Icon Theme Override (v2.5.3+) ===
+            // Check if user selected icon theme manually in prefs
+            let sourceIconTheme = null; // null = auto-detect from source theme
+            let manualIconOverrideEnabled = false;
+
+            if (settings) {
+                try {
+                    manualIconOverrideEnabled = settings.get_boolean("manual-icon-theme-override");
+                    if (manualIconOverrideEnabled) {
+                        const selectedIconTheme = settings.get_string("selected-icon-theme");
+                        if (selectedIconTheme && selectedIconTheme.trim() !== "") {
+                            sourceIconTheme = selectedIconTheme;
+                            this._logger.info(` Using MANUAL icon theme: ${sourceIconTheme}`);
+                        } else {
+                            this._logger.warn(
+                                ` Manual icon override enabled but no theme selected - using auto-detection`
+                            );
+                        }
+                    }
+                } catch (e) {
+                    this._logger.warn(` Could not read manual-icon-theme-override setting: ${e.message}`);
+                }
+            }
+
+            // If manual override not set, auto-detect from source theme
+            if (!sourceIconTheme) {
+                sourceIconTheme = this._parseSourceIconTheme(sourcePath);
+                this._logger.debug(` Using AUTO-DETECTED icon theme: ${sourceIconTheme}`);
+            }
 
             // Detect theme brightness once for all CSS generation functions
             const isLightTheme = this._isLightTheme(sourcePath);
@@ -2925,7 +3005,8 @@ ${this.extensionName} GNOME Shell Extension
                 originalGtkTheme,
                 originalShellTheme,
                 originalIconTheme,
-                sourceIconTheme
+                sourceIconTheme,
+                manualIconOverrideEnabled
             });
 
             // Update icon theme if interfaceSettings provided and source icon theme changed

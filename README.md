@@ -1,21 +1,24 @@
 # CSS Gnommé - Dynamic Theme Overlay for GNOME Shell
 
-> **🎉 ZorinOS 18 / GNOME 46+ Version (v2.5.1)** > **Latest Stable:** Quick Settings Enhancements + Dynamic Updates
+> 🎉 ZorinOS 18 / GNOME 46+ Version (v2.5.3)
+> Latest Stable: Manual Icon Theme Override + Dynamic Shadow-Strength
 
-**CSS Gnommé** is a powerful GNOME Shell extension for **Zorin OS 18 (GNOME 46+)** that creates a dynamic overlay theme system with automatic wallpaper color extraction, advanced blur effects, and customizable transparency. It enhances your desktop appearance without modifying the original theme files, making it completely reversible.
+CSS Gnommé is a powerful GNOME Shell extension for Zorin OS 18 (GNOME 46+) that creates a dynamic overlay theme system with automatic wallpaper color extraction, advanced blur effects, and customizable transparency. It enhances your desktop appearance without modifying the original theme files, making it completely reversible.
 
-**📦 Version Status:**
+## 📦 Version Status
 
-- **Latest Stable:** v2.5.1 (GNOME 46+) - Quick Settings Enhancements + Dynamic Updates
+- **Latest Stable:** v2.5.3 (GNOME 46+) - Icon Override + Shadow-Strength Fix
 - **Legacy Version:** v1.5 (GNOME 43-44) - Available for ZorinOS 17
 
-**📈 Recent Achievements:**
+## 📈 Recent Achievements
 
-- ✅ **Quick Settings Dynamic Updates** - Border-radius changes instantly apply (no overlay recreation)
-- ✅ **Quick Settings Compact Height** - 42px height (Zorin 17-style, down from 48px)
-- ✅ **Partial Border-Radius Support** - Seamless toggle+arrow connections (LTR/RTL)
-- ✅ **Minimal Mode** - Wallpaper accent ONLY for core widgets
-- ✅ **Constants Refactoring** - 35+ magic numbers eliminated
+- ✅ **Dynamic Shadow-Strength** - Fixed non-functional control (bug since v2.0!)
+- ✅ **Manual Icon Theme Override** - Select icon theme independently from GTK theme
+- ✅ **Preferences UI Reorganization** - Cleaner layout, Zorin features grouped
+- ✅ **Zorin Menu Layout Control** - 5 layout styles (v2.5.2)
+- ✅ **Quick Settings Enhancements** - Border-radius sync, compact height, dynamic updates (v2.5.1)
+- ✅ **Minimal Mode** - Wallpaper accent ONLY for core widgets (v2.5.0)
+- ✅ **Constants Refactoring** - 35+ magic numbers eliminated (v2.5.0)
 - ✅ **6x Performance Boost** - Accent color cache (97.3% hit rate)
 
 ---
@@ -24,40 +27,43 @@
 
 ### 🔄 Dynamic Theme Overlay System
 
-- **Non-Destructive**: Creates a custom theme overlay that inherits from your current GTK theme
-- **Live Updates**: Automatically updates CSS when settings change
-- **One-Click Toggle**: Enable/disable the overlay system without losing your configuration
-- **Theme Preservation**: Automatically restores your original theme when disabling the overlay
+- **Non-Destructive:** Creates a custom theme overlay that inherits from your current GTK theme
+- **Live Updates:** Automatically updates CSS when settings change
+- **One-Click Toggle:** Enable/disable the overlay system without losing your configuration
+- **Theme Preservation:** Automatically restores your original theme when disabling the overlay
 
 ### 🎨 Automatic Wallpaper Color Extraction
 
-- **Smart Analysis**: Automatically extracts dominant and accent colors from your desktop background using advanced K-means clustering algorithm
-- **Intelligent Application**: Applies extracted colors to panel backgrounds, popup menus, and accent borders
-- **Light/Dark Detection**: Automatically adjusts color intensity based on your theme brightness
-- **Manual Control**: Extract colors on-demand with one click from the system tray menu
+- **Smart Analysis:** Automatically extracts dominant and accent colors from your desktop background using advanced K-means clustering algorithm
+- **Intelligent Application:** Applies extracted colors to panel backgrounds, popup menus, and accent borders
+- **Light/Dark Detection:** Automatically adjusts color intensity based on your theme brightness
+- **Manual Control:** Extract colors on-demand with one click from the system tray menu
 
 ### 🌫️ Advanced Styling Effects
 
-- **Full Backdrop Control**: Adjust blur radius (1-50px), saturation, contrast, and brightness independently
-- **Custom Tinting**: Apply semi-transparent color overlays for unique glass effects
-- **Border Customization**: Define border color, width, and opacity for framed appearance (0-5px)
-- **Universal Application**: Effects apply to panels, popup menus, Alt+Tab switcher, and other shell elements
+- **Full Backdrop Control:** Adjust blur radius (1-50px), saturation, contrast, and brightness independently
+- **Custom Tinting:** Apply semi-transparent color overlays for unique glass effects
+- **Border Customization:** Define border color, width, and opacity for framed appearance (0-5px)
+- **Shadow Control:** Dynamic shadow-strength (0.0-1.0) with ratio-based scaling for visual hierarchy ✨ NEW in v2.5.3
+- **Universal Application:** Effects apply to panels, popup menus, Alt+Tab switcher, and other shell elements
 
 ### 🖥️ ZorinOS Integration
 
-- **Taskbar Enhancement**: Special integration with Zorin Taskbar for consistent styling
-- **Panel Margin Control**: Adjust panel margins for floating mode (0-32px)
-- **Opacity Sync**: Synchronize opacity with Zorin Taskbar settings
-- **Border Radius**: Synchronize rounded corners for modern appearance (0-25px) with Zorin Taskbar settings
-- **Tint Control**: Adjust Zorin theme color tint intensity (0-100%) for more neutral or vibrant appearance
-- **Zorin Menu Layout**: ZorinOS default menu has some advanced options for appearance like "MINT" style, "APP_GRID" style, etc., but I didn't found a way to "simply" activate them (perhaps that is still not ready, or it is for "pro" version only, still, I've added them here for additional styling options)
+- **Taskbar Enhancement:** Special integration with Zorin Taskbar for consistent styling
+- **Panel Margin Control:** Adjust panel margins for floating mode (0-32px)
+- **Opacity Sync:** Synchronize opacity with Zorin Taskbar settings
+- **Border Radius:** Synchronize rounded corners for modern appearance (0-25px)
+- **Tint Control:** Adjust Zorin theme color tint intensity (0-100%) for more neutral or vibrant appearance
+- **Menu Layout Control:** Choose from 5 Zorin Menu layout styles (ALL, MINT, APP_GRID, APPS_ONLY, SYSTEM_ONLY)
+- **Icon Theme Override:** Select icon theme independently from GTK theme ✨ NEW in v2.5.3
 
 ### 🎛️ Customizable Transparency
 
-- **Panel Opacity**: Control main taskbar/panel transparency (0-100%)
-- **Menu Opacity**: Separate opacity control for popup menus
-- **Color Overrides**: Manually set panel and popup background colors with full RGBA support
-- **Border Radius**: Apply rounded corners for modern appearance (0-25px)
+- **Panel Opacity:** Control main taskbar/panel transparency (0-100%)
+- **Menu Opacity:** Separate opacity control for popup menus
+- **Color Overrides:** Manually set panel and popup background colors with full RGBA support
+- **Border Radius:** Apply rounded corners for modern appearance (0-25px)
+- **Quick Settings Sync:** Quick Settings elements match panel border-radius with scaling factors
 
 ---
 
@@ -65,7 +71,13 @@
 
 ![CSS Gnommé Screenshot](screenshot.png)
 
-Additional Screenshots:
+---
+
+![CSS Gnommé Calendar and Notification](docs/screenshot-calendar-notification.png)
+
+---
+
+**Additional Screenshots:**
 
 - [Auto Mode](docs/screenshot-appmenu-automode-dark.png)
 - [Auto Mode Calendar](docs/screenshot-calendar-automode-dark.png)
@@ -79,7 +91,7 @@ Additional Screenshots:
 
 - GNOME 45, 46, or 47
 - ZorinOS 18 (recommended for full Zorin Taskbar integration)
-- Any modern Linux distribution with GNOME 46+
+- Any modern Linux distribution with GNOME 46+ should work
 
 **Tested On:**
 
@@ -129,17 +141,17 @@ Then restart GNOME Shell and enable the extension.
 
 ### Getting Started
 
-1. **Enable the Extension**: Use GNOME Extensions app or the system tray icon
-2. **Open Preferences**: Click the system tray icon → "Open Settings"
-3. **Enable Overlay**: Toggle "Enable Overlay Theme" to activate
-4. **Extract Colors**: Click "Extract Colors from Wallpaper" for automatic theming
-5. **Customize**: Adjust transparency, blur effects, and colors to your liking
+1. **Enable the Extension:** Use GNOME Extensions app or the system tray icon
+2. **Open Preferences:** Click the system tray icon → "Open Settings"
+3. **Enable Overlay:** Toggle "Enable Overlay Theme" to activate
+4. **Extract Colors:** Click "Extract Colors from Wallpaper" for automatic theming
+5. **Customize:** Adjust transparency, blur effects, and colors to your liking
 
 ### Quick Actions (System Tray Menu)
 
-- **Extract Colors from Wallpaper**: One-click color extraction
-- **Enable/Disable Overlay**: Quick toggle without opening preferences
-- **Open Settings**: Open full settings dialog
+- **Extract Colors from Wallpaper:** One-click color extraction
+- **Enable/Disable Overlay:** Quick toggle without opening preferences
+- **Open Settings:** Open full settings dialog
 
 For detailed setup instructions, see [Quick Guide](docs/QUICK_GUIDE_ZOS18.md).
 
@@ -186,13 +198,12 @@ gnome-extensions list --enabled
 
 ## ⚠️ Known Limitations | Issues
 
-- **Theme Compatibility**: Overlay theme inherits from current GTK theme (some themes may have compatibility issues)
-- **Fluent GTK Themes**: Missing some icons, not sure why, but same behavior is even without the extension installed
-- **Color Extraction**: Requires valid image wallpaper (not solid colors or gradients)
-- **Zorin Integration**: Full integration requires ZorinOS 18 / GNOME 46+ (CSS Gnommé "cooperates" with Zorin taskbar)
-- **Zorin Taskbar Border-Radius "issues"**: Zorin taskbar uses inline styles and javascript to achive some of it's functionality, still, border-radius in Zorin have step of 5 (flat | 5px | 10px | 15px - default | 20px | 25px+) - CSS Gnommé uses "normal" border radius, but tries to "adapt" to Zorin taskbar.  
-It seems, for taskbar, that hoover states have some bug in it. It is noteworthy that with border-radius set to zero - returns default Zorin's 15px border-radius (even without the extension installed).
-- **Performance**: Complex blur effects may impact performance on older hardware, theme switching also
+- **Theme Compatibility:** Overlay theme inherits from current GTK theme (some themes may have compatibility issues)
+- **Fluent GTK Themes:** Missing icons if Fluent icon theme not installed → SOLVED with manual icon override (v2.5.3)
+- **Color Extraction:** Requires valid image wallpaper (not solid colors or gradients)
+- **Zorin Integration:** Full integration requires ZorinOS 18 / GNOME 46+
+- **Zorin Taskbar Border-Radius:** Zorin taskbar uses inline styles and javascript, border-radius has step of 5 (flat | 5px | 10px | 15px - default | 20px | 25px+). CSS Gnommé uses normal border radius but tries to adapt to Zorin taskbar. Setting border-radius to zero returns default Zorin's 15px (even without extension installed).
+- **Performance:** Complex blur effects may impact performance on older hardware
 
 ---
 
@@ -202,12 +213,19 @@ It seems, for taskbar, that hoover states have some bug in it. It is noteworthy 
 
 - Use moderate blur radius (10-20px) for best balance
 - Disable auto-color extraction if you don't change wallpapers often
+- Adjust shadow-strength to balance visual appeal and performance
 
 **Visual Consistency:**
 
 - Match border-radius across all elements for cohesive look
 - Use extracted colors for best integration with wallpaper
 - Adjust saturation for more vibrant or muted appearance
+
+**Power User Features:**
+
+- Use Manual Icon Theme Override for themes without matching icon packs
+- Adjust Zorin Menu layout for different workflows (MINT, APP_GRID, etc.)
+- Fine-tune shadow-strength (0.1 for minimal, 0.4 default, 1.0 for max glow)
 
 ---
 
@@ -229,7 +247,7 @@ This project is licensed under the GNU General Public License v3.0 or later - se
 ## 🙏 Acknowledgments
 
 - GNOME Shell team for the extension API
-- Zorin OS team for the work they put in excellent desktop environment
+- Zorin OS team for the excellent desktop environment
 - Open Bar extension for color extraction inspiration
 - CSS Panels extension (Cinnamon)
 

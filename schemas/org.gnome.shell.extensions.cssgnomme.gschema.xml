@@ -79,6 +79,19 @@
       <description>Automatically detect and apply colors from your wallpaper when it changes. Extracts dominant colors for panel/popup backgrounds and accent colors for borders.</description>
     </key>
 
+    <!-- Icon Theme Management -->
+    <key name="manual-icon-theme-override" type="b">
+      <default>false</default>
+      <summary>Manual icon theme override</summary>
+      <description>When enabled, use manually selected icon theme instead of auto-detected from source GTK theme. Useful when theme's default icons are missing (e.g., Fluent GTK without Fluent icons).</description>
+    </key>
+
+    <key name="selected-icon-theme" type="s">
+      <default>''</default>
+      <summary>Selected icon theme</summary>
+      <description>Manually selected icon theme name when manual override is enabled. Empty string uses auto-detection.</description>
+    </key>
+
     <!-- Blur effects settings - compatible with Cinnamon -->
     <key name="blur-radius" type="i">
       <default>22</default>
@@ -123,10 +136,10 @@
     </key>
 
     <key name="shadow-strength" type="d">
-      <range min="0.0" max="0.8"/>
-      <default>0.3</default>
+      <range min="0.0" max="1.0"/>
+      <default>0.4</default>
       <summary>Shadow spread (outer glow)</summary>
-      <description>Controls the spread radius of box-shadow effects - how wide the outer glow appears around panels and menus. 0.0 = no visible shadow, 0.3 = subtle depth (12px, recommended), 0.5 = medium halo (20px), 0.8 = wide glow (32px). Works independently of shadow color opacity.</description>
+      <description>Controls the spread radius of box-shadow effects - how wide the outer glow appears around panels and menus. 0.0 = no shadow, 0.1 = minimal (3px panel), 0.4 = subtle depth (12px panel, recommended), 0.6 = medium halo (18px panel), 1.0 = max glow (30px panel). Ratios: popup/button 67%, inset 125% of panel value.</description>
     </key>
 
     <key name="shadow-color" type="s">

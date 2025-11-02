@@ -363,7 +363,9 @@ export default class CSSGnommePreferences extends ExtensionPreferences {
             }
         ]);
 
-        themeIntegrationGroup.add(sourceThemeRow); // Overlay status display
+        themeIntegrationGroup.add(sourceThemeRow);
+
+        // Overlay status display
         const statusRow = new Adw.ActionRow({
             title: _("Overlay Status"),
             subtitle: _("Checking...")
@@ -388,21 +390,6 @@ export default class CSSGnommePreferences extends ExtensionPreferences {
         );
 
         themeIntegrationGroup.add(statusRow);
-
-        // Zorin OS Integration switch
-        const zorinIntegrationRow = new Adw.ActionRow({
-            title: _("Enable Zorin OS Integration"),
-            subtitle: _(
-                "Syncs panel settings with Zorin Taskbar (margin, border radius, opacity). For Fluent-based themes, adds Zorin-style floating panel enhancements and modern aesthetics."
-            )
-        });
-        const zorinIntegrationSwitch = new Gtk.Switch({
-            valign: Gtk.Align.CENTER
-        });
-        settings.bind("enable-zorin-integration", zorinIntegrationSwitch, "active", Gio.SettingsBindFlags.DEFAULT);
-        zorinIntegrationRow.add_suffix(zorinIntegrationSwitch);
-        zorinIntegrationRow.activatable_widget = zorinIntegrationSwitch;
-        themeIntegrationGroup.add(zorinIntegrationRow);
 
         // Auto-detect radius
         const autoDetectRadiusRow = new Adw.ActionRow({
@@ -1099,6 +1086,21 @@ export default class CSSGnommePreferences extends ExtensionPreferences {
         notificationsRow.set_activatable_widget(notificationsSwitch);
         indicatorGroup.add(notificationsRow);
 
+        // Zorin OS Integration switch (moved from Theme Overlay page)
+        const zorinIntegrationRow = new Adw.ActionRow({
+            title: _("Enable Zorin OS Integration"),
+            subtitle: _(
+                "Syncs panel settings with Zorin Taskbar (margin, border radius, opacity). For Fluent-based themes, adds Zorin-style floating panel enhancements and modern aesthetics."
+            )
+        });
+        const zorinIntegrationSwitch = new Gtk.Switch({
+            valign: Gtk.Align.CENTER
+        });
+        settings.bind("enable-zorin-integration", zorinIntegrationSwitch, "active", Gio.SettingsBindFlags.DEFAULT);
+        zorinIntegrationRow.add_suffix(zorinIntegrationSwitch);
+        zorinIntegrationRow.activatable_widget = zorinIntegrationSwitch;
+        indicatorGroup.add(zorinIntegrationRow);
+
         // Zorin Menu Layout Control (power user feature - not exposed in Zorin Appearance)
         const zorinMenuAvailable = _isZorinMenuAvailable();
         const zorinMenuLayoutRow = new Adw.ComboRow({
@@ -1154,6 +1156,125 @@ export default class CSSGnommePreferences extends ExtensionPreferences {
 
         indicatorGroup.add(zorinMenuLayoutRow);
 
+        // === ICON THEME OVERRIDE (moved from Theme Overlay page) ===
+        // Toggle: Icon Theme Override
+        const manualIconRow = new Adw.ActionRow({
+            title: _("Icon Theme Override"),
+            subtitle: _("Select icon theme independently from GTK theme (useful if theme icons missing)")
+        });
+        const manualIconSwitch = new Gtk.Switch({ valign: Gtk.Align.CENTER });
+        settings.bind("manual-icon-theme-override", manualIconSwitch, "active", Gio.SettingsBindFlags.DEFAULT);
+        manualIconRow.add_suffix(manualIconSwitch);
+        manualIconRow.activatable_widget = manualIconSwitch;
+        indicatorGroup.add(manualIconRow);
+
+        // Dropdown: Icon Theme Selection
+        const iconThemeRow = new Adw.ComboRow({
+            title: _("Icon Theme"),
+            subtitle: _(
+                "Select icon theme for overlay (requires icon theme override enabled and manual overlay re-creation)"
+            )
+        });
+
+        /**
+         * Discover installed icon themes from standard locations
+         * @returns {string[]} Array of icon theme names
+         */
+        function _discoverInstalledIconThemes() {
+            const iconThemes = new Set();
+            const iconDirs = [
+                GLib.get_home_dir() + "/.icons",
+                GLib.get_home_dir() + "/.local/share/icons",
+                "/usr/share/icons"
+            ];
+
+            iconDirs.forEach(dir => {
+                try {
+                    const dirFile = Gio.File.new_for_path(dir);
+                    if (!dirFile.query_exists(null)) return;
+
+                    const enumerator = dirFile.enumerate_children(
+                        "standard::name,standard::type",
+                        Gio.FileQueryInfoFlags.NONE,
+                        null
+                    );
+
+                    let info;
+                    while ((info = enumerator.next_file(null)) !== null) {
+                        if (info.get_file_type() === Gio.FileType.DIRECTORY) {
+                            const themeName = info.get_name();
+
+                            // Skip hidden directories and system reserved names
+                            if (themeName.startsWith(".") || themeName === "default") {
+                                continue;
+                            }
+
+                            // Verify index.theme exists (required for valid icon theme)
+                            const indexPath = `${dir}/${themeName}/index.theme`;
+                            if (GLib.file_test(indexPath, GLib.FileTest.EXISTS)) {
+                                iconThemes.add(themeName);
+                            }
+                        }
+                    }
+                    enumerator.close(null);
+                } catch (e) {
+                    log(`[CSSGnomme:Prefs] Error scanning icon directory ${dir}: ${e.message}`);
+                }
+            });
+
+            // Convert Set to sorted Array
+            const iconArray = Array.from(iconThemes).sort();
+
+            // Ensure Adwaita is first if it exists (system fallback)
+            const adwaitaIndex = iconArray.indexOf("Adwaita");
+            if (adwaitaIndex > 0) {
+                iconArray.splice(adwaitaIndex, 1);
+                iconArray.unshift("Adwaita");
+            }
+
+            return iconArray;
+        }
+
+        // Populate icon theme dropdown
+        const iconStringList = new Gtk.StringList();
+        const iconThemes = _discoverInstalledIconThemes();
+        let selectedIconIndex = 0;
+
+        const savedIconTheme = settings.get_string("selected-icon-theme");
+        iconThemes.forEach((theme, index) => {
+            iconStringList.append(theme);
+            if (savedIconTheme && theme === savedIconTheme) {
+                selectedIconIndex = index;
+            }
+        });
+
+        iconThemeRow.model = iconStringList;
+        iconThemeRow.set_selected(selectedIconIndex);
+
+        // Sensitivity binding - disabled when manual override OFF
+        iconThemeRow.sensitive = settings.get_boolean("manual-icon-theme-override");
+        signalsHandler.add([
+            settings,
+            "changed::manual-icon-theme-override",
+            () => {
+                iconThemeRow.sensitive = settings.get_boolean("manual-icon-theme-override");
+            }
+        ]);
+
+        // Save icon theme selection
+        const iconThemeSignalId = iconThemeRow.connect("notify::selected", () => {
+            if (blockSignals) return;
+
+            const idx = iconThemeRow.get_selected();
+            if (idx !== Gtk.INVALID_LIST_POSITION && idx < iconThemes.length) {
+                const selectedIconTheme = iconThemes[idx];
+                settings.set_string("selected-icon-theme", selectedIconTheme);
+                log(`[CSSGnomme:Prefs] Icon theme changed to: ${selectedIconTheme}`);
+            }
+        });
+
+        indicatorGroup.add(iconThemeRow);
+
         advancedPage.add(indicatorGroup);
 
         // Automation Group (Theme Auto-Switching + Full Auto Mode)
@@ -1176,16 +1297,6 @@ export default class CSSGnommePreferences extends ExtensionPreferences {
         autoSwitchColorSchemeRow.activatable_widget = autoSwitchColorSchemeSwitch;
         automationGroup.add(autoSwitchColorSchemeRow);
 
-        // Info label for auto-switch behavior
-        const filterInfoRow = new Adw.ActionRow({
-            title: "ℹ️ " + _("How It Works"),
-            subtitle: _(
-                "When enabled: Quick Settings toggle automatically switches your theme between -Dark and -Light variants. Dropdown shows only themes matching current appearance. When disabled: Manual theme selection, all themes shown."
-            )
-        });
-        filterInfoRow.set_sensitive(false); // Non-interactive info label
-        automationGroup.add(filterInfoRow);
-
         // Full Auto Mode switch
         const fullAutoModeRow = new Adw.ActionRow({
             title: _("Full Auto Mode"),
@@ -1198,14 +1309,6 @@ export default class CSSGnommePreferences extends ExtensionPreferences {
         fullAutoModeRow.add_suffix(fullAutoModeSwitch);
         fullAutoModeRow.set_activatable_widget(fullAutoModeSwitch);
         automationGroup.add(fullAutoModeRow);
-
-        // Info label explaining modes
-        const modeInfoRow = new Adw.ActionRow({
-            title:
-                "ℹ️ " + _("Standard: Theme accent + Wallpaper backgrounds | Full Auto: Wallpaper controls everything")
-        });
-        modeInfoRow.set_sensitive(false); // Non-interactive info label
-        automationGroup.add(modeInfoRow);
 
         advancedPage.add(automationGroup);
 
@@ -1240,7 +1343,7 @@ export default class CSSGnommePreferences extends ExtensionPreferences {
 
         // Version + Author info (compact)
         const versionAuthorRow = new Adw.ActionRow({
-            title: _("Version") + ": v2.5.2 | " + _("Author") + ": drdrummie",
+            title: _("Version") + ": v2.5.3 | " + _("Author") + ": drdrummie",
             subtitle: _(
                 "Developed for Zorin OS 18+ (GNOME Shell 46+), inspired by Cinnamon CSS Panels and gnome Open Bar extensions."
             )

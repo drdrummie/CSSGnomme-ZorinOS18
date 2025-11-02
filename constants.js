@@ -290,12 +290,38 @@ export const Constants = {
 
     /**
      * Shadow spread multiplier for shadow-strength setting
-     * Maps shadow-strength (0.0-0.8) to blur radius in pixels
-     * Formula: spread = strength * multiplier
-     * Example: strength 0.3 → 12px, strength 0.5 → 20px, strength 0.8 → 32px
+     * Maps shadow-strength (0.0-1.0) to blur radius in pixels
+     * Formula: panelBlur = strength * multiplier
+     * Example: strength 0.4 → 12px (default), strength 0.6 → 18px, strength 1.0 → 30px
      * This controls the outer glow/halo visibility around panels and menus
+     *
+     * Range: 0.0 (no shadow) to 1.0 (max 30px panel blur)
+     * Calculation: 12px (current panel default) / 0.4 (new default strength) = 30
      */
-    SHADOW_SPREAD_MULTIPLIER: 70,
+    SHADOW_SPREAD_MULTIPLIER: 30,
+
+    /**
+     * Shadow blur ratio modifiers relative to base panel shadow
+     * These maintain visual hierarchy while allowing dynamic shadow-strength control
+     *
+     * Base calculation: panelBlur = shadowStrength * SHADOW_SPREAD_MULTIPLIER
+     * Then apply ratios for other elements:
+     *   - popup: panelBlur * 0.67 (8px at default 0.4 strength)
+     *   - button: panelBlur * 0.67 (8px at default 0.4 strength)
+     *   - inset: panelBlur * 1.25 (15px at default 0.4 strength)
+     *
+     * Examples at different strength values:
+     *   - 0.1: panel 3px, popup 2px, button 2px, inset 4px (minimal)
+     *   - 0.4: panel 12px, popup 8px, button 8px, inset 15px (default)
+     *   - 0.6: panel 18px, popup 12px, button 12px, inset 23px (medium)
+     *   - 1.0: panel 30px, popup 20px, button 20px, inset 38px (maximum)
+     */
+    SHADOW_BLUR_RATIOS: {
+        panel: 1.0, // Base reference (12px at 0.4 strength)
+        popup: 0.67, // 67% of panel (8px at 0.4 strength)
+        button: 0.67, // 67% of panel (8px at 0.4 strength)
+        inset: 1.25 // 125% of panel (15px at 0.4 strength)
+    },
 
     // === COLOR FALLBACKS ===
 
@@ -385,12 +411,16 @@ export const Constants = {
      * Popup: 8px - Sharp depth, matches taskbar for visual consistency
      * Button: 8px - Button hover/active shadow
      * Inset: 15px - Inner glossy glow effect
+     *
+     * @deprecated Since v2.6 - Now calculated dynamically via shadow-strength setting
+     * See SHADOW_SPREAD_MULTIPLIER and SHADOW_BLUR_RATIOS for dynamic calculation
+     * Kept for backwards compatibility reference only
      */
     SHADOW_BLUR_VALUES: {
-        panel: 12,
-        popup: 8,
-        button: 8,
-        inset: 15
+        panel: 12, // Now: shadowStrength * SHADOW_SPREAD_MULTIPLIER * SHADOW_BLUR_RATIOS.panel
+        popup: 8, // Now: shadowStrength * SHADOW_SPREAD_MULTIPLIER * SHADOW_BLUR_RATIOS.popup
+        button: 8, // Now: shadowStrength * SHADOW_SPREAD_MULTIPLIER * SHADOW_BLUR_RATIOS.button
+        inset: 15 // Now: shadowStrength * SHADOW_SPREAD_MULTIPLIER * SHADOW_BLUR_RATIOS.inset
     },
 
     // === UI LABELS AND INDICATORS ===

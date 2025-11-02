@@ -439,6 +439,38 @@ headerbar windowcontrols button::after {
      * Generate Window styling (CSD decorations)
      * @param {number} borderRadius - Border radius value
      * @returns {string} Window CSS
+     *
+     * NOTE: Window border-radius limitations (2025-10-31)
+     * =====================================================
+     * We do NOT apply border-radius to window.background due to GTK3/GTK4 rendering
+     * limitations that cause content overflow ("sharp corners bleeding outside rounded borders").
+     *
+     * ATTEMPTED WORKAROUNDS (all failed):
+     * 1. overflow: hidden on window.background - Ignored by GTK4
+     * 2. clip-path: inset(0 round Xpx) - Not respected by libadwaita
+     * 3. Zorin pattern (.unified selectors) - No improvement
+     * 4. scrolledwindow bottom-only radius - Insufficient clipping
+     * 5. toolbarview child selectors - Only helps AdwToolbarView apps (Nautilus)
+     * 6. box.vertical/horizontal clipping - Ignored
+     *
+     * ROOT CAUSE:
+     * - GTK3: CSS border-radius works, but overflow:hidden unreliable for some widgets
+     * - GTK4 + libadwaita: Hardcoded rendering in C code ignores CSS overrides
+     * - Software Updates (gnome-software): Uses old layout without AdwToolbarView
+     * - Modern apps (Nautilus): Use AdwToolbarView which auto-clips (works OK)
+     *
+     * VERIFICATION:
+     * - Original Zorin themes: Same problem exists (not CSSGnomme bug)
+     * - Fluent themes: Same problem exists
+     * - GNOME Terminal (GTK3): Works perfectly with border-radius
+     *
+     * DECISION: Accept limitation, focus on what works:
+     * - HeaderBar rounded top corners (works 100%)
+     * - Panel, popups, Quick Settings (full control)
+     * - GTK3 applications (full control)
+     * - Modern libadwaita apps with AdwToolbarView (acceptable)
+     *
+     * See: docs/GTK4_LIBADWAITA_LIMITATIONS.md (if created)
      */
     getGtkWindowStyle(borderRadius) {
         return `
@@ -446,11 +478,6 @@ headerbar windowcontrols button::after {
 window.csd,
 window.csd decoration,
 window.solid-csd decoration {
-    border-radius: ${borderRadius}px;
-}
-
-/* Window background */
-window.background {
     border-radius: ${borderRadius}px;
 }
 
