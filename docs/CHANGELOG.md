@@ -13,25 +13,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-• **Dynamic Shadow-Strength Control**: Fixed non-functional slider (bug since v2.0!)
-◦ Formula: `baseShadow = shadowStrength × 30` with ratio-based scaling
-◦ Range expanded: 0.0-1.0 (was 0.0-0.8)
-◦ Default adjusted: 0.4 (maintains 12px panel blur)
-◦ Examples: 0.0 = no shadow, 0.1 = minimal (3px), 0.4 = default (12px), 1.0 = max glow (30px)
-◦ Instant updates without overlay recreation
+- **Dynamic Shadow-Strength Control**: Fixed non-functional slider (bug since v2.0!)
 
-• **Manual Icon Theme Override**: Select icon theme independently from GTK theme
-◦ Fixes missing icons for themes without matching icon packs (e.g., Fluent GTK)
-◦ Scans ~/.icons, ~/.local/share/icons, /usr/share/icons with validation
-◦ Auto-detect fallback when disabled (default behavior)
-◦ Location: Advanced Settings → Interface Behavior
+  - Formula: `baseShadow = shadowStrength × 30` with ratio-based scaling
+  - Range expanded: 0.0-1.0 (was 0.0-0.8)
+  - Default adjusted: 0.4 (maintains 12px panel blur)
+  - Examples: 0.0 = no shadow, 0.1 = minimal (3px), 0.4 = default (12px), 1.0 = max glow (30px)
+  - Instant updates without overlay recreation
+
+- **Manual Icon Theme Override**: Select icon theme independently from GTK theme
+
+  - Fixes missing icons for themes without matching icon packs (e.g., Fluent GTK)
+  - Scans ~/.icons, ~/.local/share/icons, /usr/share/icons with validation
+  - Auto-detect fallback when disabled (default behavior)
+  - Location: Advanced Settings → Interface Behavior
 
 ### Changed
 
-• **Preferences UI Reorganization**: Cleaner layout with logical grouping
-◦ Theme Overlay page simplified (removed Zorin/Icon controls)
-◦ Advanced Settings enhanced (Zorin features + Icon override grouped)
-◦ Removed verbose "How It Works" info rows
+- **Preferences UI Reorganization**: Cleaner layout with logical grouping
+
+  - Theme Overlay page simplified (removed Zorin/Icon controls)
+  - Advanced Settings enhanced (Zorin features + Icon override grouped)
+  - Removed verbose "How It Works" info rows
 
 ---
 
