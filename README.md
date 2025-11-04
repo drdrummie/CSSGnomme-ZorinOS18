@@ -8,7 +8,7 @@ CSS Gnommé is a powerful GNOME Shell extension for Zorin OS 18 (GNOME 46+) that
 ## 📦 Version Status
 
 - **Latest Stable:** v2.5.3 (GNOME 46+) - Icon Override + Shadow-Strength Fix
-- **Legacy Version:** v1.5 (GNOME 43-44) - Available for ZorinOS 17
+- **Legacy Version:** v1.5.4 (GNOME 43-44) - [Available for ZorinOS 17.3](https://github.com/drdrummie/CSSGnomme-ZorinOS17)
 
 ## 📈 Recent Achievements
 
